@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="shi62">
+      <UniqueIdentifier>{0d69bd94-e3e4-4360-a032-6a92405060ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shi62\winapi">
+      <UniqueIdentifier>{5b49892d-119d-428b-975d-af8b01f2a708}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\winapi_Window.cpp">
+      <Filter>shi62\winapi</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\WinMain.cpp">
+      <Filter>shi62</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Source\winapi_Window.hpp">
+      <Filter>shi62\winapi</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
