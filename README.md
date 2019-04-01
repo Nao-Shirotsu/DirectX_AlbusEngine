@@ -2,6 +2,10 @@
 
 C++ game engine for 3D graphics and games on Windows.
 
+## Branch structure
+
+![branch structure](https://i.imgur.com/I2oiYGA.png)
+
 ## License
 
 This is an opensource project.
