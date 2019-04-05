@@ -4,7 +4,12 @@ int WINAPI wWinMain( HINSTANCE hInstance,
                      HINSTANCE hPrevInstance,
                      LPWSTR lpCmdLine,
                      int nCmdShow ){
-    shi62::winapi::Window window( "win1", "your window", 400, 300 );
+
+    UNREFERENCED_PARAMETER( hPrevInstance );
+    UNREFERENCED_PARAMETER( lpCmdLine );
+    UNREFERENCED_PARAMETER( nCmdShow );
+
+    shi62::winapi::Window window( hInstance, L"win1", L"your window", 400, 300 );
     while( !window.TerminationRequested() ){
         window.Update();
     }

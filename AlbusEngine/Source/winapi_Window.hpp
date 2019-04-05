@@ -1,30 +1,30 @@
 ﻿#pragma once
-#include <Windows.h>
+#include <windows.h>
 
 namespace shi62::winapi{
 
 // 画面に表示するウィンドウのクラス
 class Window{
 public:
-    Window( const char* windowClassName, const char* windowTitle, const int width, const int height );
+    Window( HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR windowTitle, const int width, const int height );
     ~Window();
 
     // ループ処理一回分を実行
-    void Update();
+    auto Update() -> void;
 
-    // ウィンドウをterminateするか否か
-    bool TerminationRequested() const;
+    // ウィンドウ終了処理が始まるときtrue
+    auto TerminationRequested() -> bool const;
 
 private:
     HINSTANCE mInstanceHandle;
-    LPCSTR mWindowClassName;
-    LPCSTR mWindowTitle; // Windowタイトルバーに表示する文字列
+    LPCWSTR mWindowClassName;
+    LPCWSTR mWindowTitle; // Windowタイトルバーに表示する文字列
     HWND mWindowHandle;
     MSG mMessage;
     BOOL mMessageState; // メッセージ受信時に終了/エラーを検出する変数
 };
 
 // キーボードのいずれかのキー押下時のメッセージ処理関数
-void ProcessKeydownMessage( HWND windowHandle, WPARAM wParam );
+auto ProcessKeydownMessage( HWND windowHandle, WPARAM wParam ) -> void;
 
 }

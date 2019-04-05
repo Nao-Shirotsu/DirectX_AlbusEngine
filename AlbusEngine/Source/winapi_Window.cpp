@@ -2,29 +2,31 @@
 
 #include "winapi_Window.hpp"
 
-shi62::winapi::Window::Window( const char* windowClassName, const char* windowTitle, const int width, const int height ):
-    mWindowClassName( TEXT( windowClassName ) ),
-    mWindowTitle( TEXT( windowTitle ) ),
+shi62::winapi::Window::Window( HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR windowTitle, const int width, const int height ):
+    mInstanceHandle( instanceHandle ),
+    mWindowClassName( windowClassName ),
+    mWindowTitle( windowTitle ),
     mMessage(),
     mMessageState( TRUE ){
-    WNDCLASS windowClass;
+    WNDCLASSEX windowClass;
+    windowClass.cbSize = sizeof( WNDCLASSEX );
     windowClass.style = CS_HREDRAW | CS_VREDRAW;
     windowClass.lpfnWndProc = []( HWND windowHandle,
                                   UINT message,
                                   WPARAM wParam,
                                   LPARAM lParam ) -> LRESULT CALLBACK{
         switch( message ){
-        case WM_DESTROY:
-            PostQuitMessage( 0 );
-            windowHandle = nullptr;
-            return 0;
+            case WM_DESTROY:
+                PostQuitMessage( 0 );
+                windowHandle = nullptr;
+                return 0;
 
-        case WM_KEYDOWN:
-            ProcessKeydownMessage( windowHandle, wParam );
-            break;
+            case WM_KEYDOWN:
+                ProcessKeydownMessage( windowHandle, wParam );
+                break;
 
-        default:
-            break;
+            default:
+                break;
         }
 
         return DefWindowProc( windowHandle, message, wParam, lParam );
@@ -37,15 +39,12 @@ shi62::winapi::Window::Window( const char* windowClassName, const char* windowTi
     windowClass.hbrBackground = static_cast< HBRUSH >( GetStockObject( BLACK_BRUSH ) );
     windowClass.lpszMenuName = nullptr;
     windowClass.lpszClassName = windowClassName;
+    windowClass.hIconSm = LoadIcon( nullptr, IDI_APPLICATION );
 
     // ウィンドウクラス登録失敗でASSERT
-    _ASSERT_EXPR( RegisterClass( &windowClass ), TEXT( "Class Registration Error" ) );
+    _ASSERT_EXPR( FAILED( RegisterClassEx( &windowClass ) ), TEXT( "Class Registration Error" ) );
 
-    RECT windowRect;
-    windowRect.top = 0;
-    windowRect.left = 0;
-    windowRect.right = width;
-    windowRect.bottom = height;
+    RECT windowRect = { 0, 0, width, height };
     AdjustWindowRect( &windowRect, WS_OVERLAPPEDWINDOW, TRUE );
 
     mWindowHandle = CreateWindow( mWindowClassName,
@@ -73,20 +72,20 @@ shi62::winapi::Window::~Window(){
     UnregisterClass( mWindowClassName, mInstanceHandle );
 }
 
-void shi62::winapi::Window::Update(){
+auto shi62::winapi::Window::Update() -> void{
     TranslateMessage( &mMessage );
     DispatchMessage( &mMessage );
     mMessageState = GetMessage( &mMessage, mWindowHandle, 0, 0 );
 }
 
-bool shi62::winapi::Window::TerminationRequested() const{
+auto shi62::winapi::Window::TerminationRequested() -> bool const{
     return !mMessageState || mMessageState == -1; // 終了時かエラー発生時
 }
 
-void shi62::winapi::ProcessKeydownMessage( HWND windowHandle, WPARAM wParam ){
+auto shi62::winapi::ProcessKeydownMessage( HWND windowHandle, WPARAM wParam ) -> void{
     switch( wParam ){
-    case VK_ESCAPE:
-        PostMessage( windowHandle, WM_CLOSE, 0, 0 );
-        break;
+        case VK_ESCAPE:
+            PostMessage( windowHandle, WM_CLOSE, 0, 0 );
+            break;
     }
 }
