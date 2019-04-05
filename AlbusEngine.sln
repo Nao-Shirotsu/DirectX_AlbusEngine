@@ -5,8 +5,6 @@ VisualStudioVersion = 16.0.28729.10
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AlbusEngine", "AlbusEngine\AlbusEngine.vcxproj", "{407B4ECB-D397-4691-B5F0-4C706F0FF628}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sandbox", "Sandbox\Sandbox.vcxproj", "{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -23,14 +21,6 @@ Global
 		{407B4ECB-D397-4691-B5F0-4C706F0FF628}.Release|x64.Build.0 = Release|x64
 		{407B4ECB-D397-4691-B5F0-4C706F0FF628}.Release|x86.ActiveCfg = Release|Win32
 		{407B4ECB-D397-4691-B5F0-4C706F0FF628}.Release|x86.Build.0 = Release|Win32
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Debug|x64.ActiveCfg = Debug|x64
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Debug|x64.Build.0 = Debug|x64
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Debug|x86.ActiveCfg = Debug|Win32
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Debug|x86.Build.0 = Debug|Win32
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Release|x64.ActiveCfg = Release|x64
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Release|x64.Build.0 = Release|x64
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Release|x86.ActiveCfg = Release|Win32
-		{FF1F0439-10A5-4AE6-B9B1-C8B78C262D4B}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

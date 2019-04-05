@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <windows.h>
+#include <d3d11.h>
 
 namespace shi62::winapi{
 
@@ -16,12 +17,25 @@ public:
     auto TerminationRequested() -> bool const;
 
 private:
+    //====D3D11 samples tutorial1のコピペ====
+    auto InitDevice() -> HRESULT;
+    auto CleanupDevice() -> void; 
+    auto Render() -> void;
+    
+    D3D_DRIVER_TYPE         mDriverType;
+    D3D_FEATURE_LEVEL       mFeatureLevel;
+    ID3D11Device*           mD3dDevice;
+    ID3D11DeviceContext*    mImmediateContext;
+    IDXGISwapChain*         mSwapChain;
+    ID3D11RenderTargetView* mRenderTargetView;
+    //======================================
+
     HINSTANCE mInstanceHandle;
-    LPCWSTR mWindowClassName;
-    LPCWSTR mWindowTitle; // Windowタイトルバーに表示する文字列
-    HWND mWindowHandle;
-    MSG mMessage;
-    BOOL mMessageState; // メッセージ受信時に終了/エラーを検出する変数
+    LPCWSTR   mWindowClassName;
+    LPCWSTR   mWindowTitle; // Windowタイトルバーに表示する文字列
+    HWND      mWindowHandle;
+    MSG       mMessage;
+    BOOL      mMessageState; // メッセージ受信時に終了/エラーを検出する変数
 };
 
 // キーボードのいずれかのキー押下時のメッセージ処理関数
