@@ -6,7 +6,7 @@ shi62::winapi::Window::Window( HINSTANCE instanceHandle, LPCWSTR windowClassName
     mInstanceHandle( instanceHandle ),
     mWindowClassName( windowClassName ),
     mWindowTitle( windowTitle ),
-    mMessage(),
+    mMessage( { 0 } ),
     mMessageState( TRUE ),
     mDriverType( D3D_DRIVER_TYPE_NULL ),
     mFeatureLevel( D3D_FEATURE_LEVEL_11_0 ),
@@ -79,8 +79,6 @@ shi62::winapi::Window::Window( HINSTANCE instanceHandle, LPCWSTR windowClassName
         CleanupDevice();
         _ASSERT_EXPR( res != 0, TEXT( "Device Initialization Error" ) );
     }
-
-    mMessageState = PeekMessage( &mMessage, nullptr, 0, 0, PM_REMOVE );
 }
 
 shi62::winapi::Window::~Window(){
@@ -90,6 +88,7 @@ shi62::winapi::Window::~Window(){
 }
 
 auto shi62::winapi::Window::Update() -> void{
+    mMessageState = PeekMessage( &mMessage, nullptr, 0, 0, PM_REMOVE );
     if( mMessageState != 0 ){
         TranslateMessage( &mMessage );
         DispatchMessage( &mMessage );
@@ -97,11 +96,10 @@ auto shi62::winapi::Window::Update() -> void{
     else{
         Render();
     }
-    mMessageState = PeekMessage( &mMessage, nullptr, 0, 0, PM_REMOVE );
 }
 
 auto shi62::winapi::Window::TerminationRequested() -> bool const{
-    return mMessage.message == WM_QUIT || mMessageState == -1; // エラー発生時
+    return mMessage.message == WM_QUIT || mMessageState == -1; // 終了時とエラー発生時
 }
 
 auto shi62::winapi::Window::InitDevice() -> HRESULT{
