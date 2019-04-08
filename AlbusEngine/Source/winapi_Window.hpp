@@ -28,6 +28,13 @@ private:
     ID3D11DeviceContext*    mImmediateContext;
     IDXGISwapChain*         mSwapChain;
     ID3D11RenderTargetView* mRenderTargetView;
+    //=====================================
+
+    //====D3D11 samples tutorial2のコピペ====
+    ID3D11VertexShader*     mVertexShader;
+    ID3D11PixelShader*      mPixelShader;
+    ID3D11InputLayout*      mVertexLayout;
+    ID3D11Buffer*           mVertexBuffer;
     //======================================
 
     HINSTANCE mInstanceHandle;
@@ -41,4 +48,4 @@ private:
 // キーボードのいずれかのキー押下時のメッセージ処理関数
 auto ProcessKeydownMessage( HWND windowHandle, WPARAM wParam ) -> void;
 
-}
+}// namespace shi62:winapi
