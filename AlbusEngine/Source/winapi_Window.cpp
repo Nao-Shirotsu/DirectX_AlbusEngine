@@ -181,6 +181,12 @@ auto Window::InitDevice() -> HRESULT{
     sd.SampleDesc.Quality = 0;
     sd.Windowed = TRUE;
 
+    // ここなんでforループしてんのか分からなかったけど分かったのでメモ。
+    // 多分、ドライバは「ハードウェア」「ソフトウェア(WARP)」「リファレンス」のいずれかを
+    // 使う必要があり、driverTypesで指定した順に初期化に成功=ドライバが使えるなら
+    // それを使おうという意図だと思う。
+    // ちなみにWARPはD3Dの機能レベル9.1~10.1しかサポートしていないらしい。非推奨だったりするのかなあ。
+    // D3D11青本の書き方を見るに、ドライバの中ではリファレンスが一番強い(機能が豪華)っぽい。
     for( UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++ )
     {
         mDriverType = driverTypes[driverTypeIndex];
