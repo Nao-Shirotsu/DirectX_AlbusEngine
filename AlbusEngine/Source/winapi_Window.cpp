@@ -223,11 +223,11 @@ auto Window::InitDevice() -> HRESULT{
 
     // Compile the vertex shader
     ID3DBlob* pVSBlob = NULL;
-    hr = CompileShaderFromFile( L"Tutorial02.fx", "VS", "vs_4_0", &pVSBlob );
+    hr = CompileShaderFromFile( L"Vertex_Pixel.fx", "VertexShade", "vs_4_0", &pVSBlob );
     if( FAILED( hr ) )
     {
         MessageBox( NULL,
-                    L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK );
+                    L"VertexShader loading failed", L"Error", MB_OK );
         return hr;
     }
 
@@ -258,11 +258,11 @@ auto Window::InitDevice() -> HRESULT{
 
     // Compile the pixel shader
     ID3DBlob* pPSBlob = NULL;
-    hr = CompileShaderFromFile( L"Tutorial02.fx", "PS", "ps_4_0", &pPSBlob );
+    hr = CompileShaderFromFile( L"Vertex_Pixel.fx", "PixelShade", "ps_4_0", &pPSBlob );
     if( FAILED( hr ) )
     {
         MessageBox( NULL,
-                    L"The FX file cannot be compiled.  Please run this executable from the directory that contains the FX file.", L"Error", MB_OK );
+                    L"PixelShader loading failed", L"Error", MB_OK );
         return hr;
     }
 
@@ -275,9 +275,9 @@ auto Window::InitDevice() -> HRESULT{
     // Create vertex buffer
     XMFLOAT3 vertices[] =
     {
-        XMFLOAT3( 0.0f, 0.5f, 0.5f ),
-        XMFLOAT3( 0.5f, -0.5f, 0.5f ),
-        XMFLOAT3( -0.5f, -0.5f, 0.5f ),
+        XMFLOAT3( -0.75f, 0.75f, 1.0f ),
+        XMFLOAT3( 0.75f, -0.625f, 1.0f ),
+        XMFLOAT3( -0.80f, -0.75f, 1.0f ),
     };
     D3D11_BUFFER_DESC bd;
     ZeroMemory( &bd, sizeof( bd ) );
@@ -319,6 +319,8 @@ auto Window::Render() -> void{
     // Clear the back buffer 
     float ClearColor[4] = { 0.0f, 0.125f, 0.25f, 0.75f }; // red,green,blue,alpha
     mImmediateContext->ClearRenderTargetView( mRenderTargetView, ClearColor );
+
+
 
     // Render a triangle
     mImmediateContext->VSSetShader( mVertexShader, NULL, 0 );

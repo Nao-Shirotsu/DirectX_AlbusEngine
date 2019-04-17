@@ -9,7 +9,7 @@ int WINAPI wWinMain( HINSTANCE hInstance,
     UNREFERENCED_PARAMETER( lpCmdLine );
     UNREFERENCED_PARAMETER( nCmdShow );
 
-    shi62::winapi::Window window( hInstance, L"win1", L"D3D11 samples Tutorial 1", 400, 300 );
+    shi62::winapi::Window window( hInstance, L"win1", L"D3D11 polygon 出してみた―", 400, 300 );
     while( !window.TerminationRequested() ){
         window.Update();
     }
