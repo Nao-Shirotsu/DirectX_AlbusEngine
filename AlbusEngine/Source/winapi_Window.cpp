@@ -320,8 +320,6 @@ auto Window::Render() -> void{
     float ClearColor[4] = { 0.0f, 0.125f, 0.25f, 0.75f }; // red,green,blue,alpha
     mImmediateContext->ClearRenderTargetView( mRenderTargetView, ClearColor );
 
-
-
     // Render a triangle
     mImmediateContext->VSSetShader( mVertexShader, NULL, 0 );
     mImmediateContext->PSSetShader( mPixelShader, NULL, 0 );
