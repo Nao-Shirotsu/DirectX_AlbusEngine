@@ -21,4 +21,7 @@
       <Filter>shi62\winapi</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".clang-format" />
+  </ItemGroup>
 </Project>

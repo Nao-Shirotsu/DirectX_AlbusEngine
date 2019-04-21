@@ -1,13 +1,13 @@
 ﻿#pragma once
-#include <windows.h>
 #include <d3d11.h>
+#include <windows.h>
 
-namespace shi62::winapi{
+namespace shi62::winapi {
 
 // 画面に表示するウィンドウのクラス
-class Window{
+class Window {
 public:
-    Window( HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR windowTitle, const int width, const int height );
+    Window(HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR windowTitle, const int width, const int height);
     ~Window();
 
     // ループ処理一回分を実行
@@ -19,33 +19,33 @@ public:
 private:
     //====D3D11 samples tutorial1のコピペ====
     auto InitDevice() -> HRESULT;
-    auto CleanupDevice() -> void; 
+    auto CleanupDevice() -> void;
     auto Render() -> void;
-    
-    D3D_DRIVER_TYPE         mDriverType;
-    D3D_FEATURE_LEVEL       mFeatureLevel;
-    ID3D11Device*           mD3dDevice;
-    ID3D11DeviceContext*    mImmediateContext;
-    IDXGISwapChain*         mSwapChain;
+
+    D3D_DRIVER_TYPE mDriverType;
+    D3D_FEATURE_LEVEL mFeatureLevel;
+    ID3D11Device* mD3dDevice;
+    ID3D11DeviceContext* mImmediateContext;
+    IDXGISwapChain* mSwapChain;
     ID3D11RenderTargetView* mRenderTargetView;
     //=====================================
 
     //====D3D11 samples tutorial2のコピペ====
-    ID3D11VertexShader*     mVertexShader;
-    ID3D11PixelShader*      mPixelShader;
-    ID3D11InputLayout*      mVertexLayout;
-    ID3D11Buffer*           mVertexBuffer;
+    ID3D11VertexShader* mVertexShader;
+    ID3D11PixelShader* mPixelShader;
+    ID3D11InputLayout* mVertexLayout;
+    ID3D11Buffer* mVertexBuffer;
     //======================================
 
     HINSTANCE mInstanceHandle;
-    LPCWSTR   mWindowClassName;
-    LPCWSTR   mWindowTitle; // Windowタイトルバーに表示する文字列
-    HWND      mWindowHandle;
-    MSG       mMessage;
-    BOOL      mMessageState; // メッセージ受信時に終了/エラーを検出する変数
+    LPCWSTR mWindowClassName;
+    LPCWSTR mWindowTitle; // Windowタイトルバーに表示する文字列
+    HWND mWindowHandle;
+    MSG mMessage;
+    BOOL mMessageState; // メッセージ受信時に終了/エラーを検出する変数
 };
 
 // キーボードのいずれかのキー押下時のメッセージ処理関数
-auto ProcessKeydownMessage( HWND windowHandle, WPARAM wParam ) -> void;
+auto ProcessKeydownMessage(HWND windowHandle, WPARAM wParam) -> void;
 
-}// namespace shi62:winapi
+} // namespace shi62:winapi
