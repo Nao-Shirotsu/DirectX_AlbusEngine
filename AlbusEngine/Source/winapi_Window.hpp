@@ -1,6 +1,7 @@
 ﻿#pragma once
-#include <d3d11.h>
 #include <windows.h>
+
+#include "winapi_HwndHolder.hpp"
 
 namespace shi62::winapi {
 
@@ -16,27 +17,10 @@ public:
     // ウィンドウ終了処理が始まるときtrue
     auto TerminationRequested() -> bool const;
 
+    // HwndHolderにウィンドウハンドルを教える
+    auto InjectHwnd(HwndHolder& holder) -> void const;
+
 private:
-    //====D3D11 samples tutorial1のコピペ====
-    auto InitDevice() -> HRESULT;
-    auto CleanupDevice() -> void;
-    auto Render() -> void;
-
-    D3D_DRIVER_TYPE mDriverType;
-    D3D_FEATURE_LEVEL mFeatureLevel;
-    ID3D11Device* mD3dDevice;
-    ID3D11DeviceContext* mImmediateContext;
-    IDXGISwapChain* mSwapChain;
-    ID3D11RenderTargetView* mRenderTargetView;
-    //=====================================
-
-    //====D3D11 samples tutorial2のコピペ====
-    ID3D11VertexShader* mVertexShader;
-    ID3D11PixelShader* mPixelShader;
-    ID3D11InputLayout* mVertexLayout;
-    ID3D11Buffer* mVertexBuffer;
-    //======================================
-
     HINSTANCE mInstanceHandle;
     LPCWSTR mWindowClassName;
     LPCWSTR mWindowTitle; // Windowタイトルバーに表示する文字列
