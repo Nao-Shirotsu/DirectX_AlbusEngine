@@ -16,10 +16,10 @@ auto CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR 
 #endif
 
     ID3DBlob* pErrorBlob;
-    hr = D3DX11CompileFromFile(szFileName, NULL, NULL, szEntryPoint, szShaderModel,
-                               dwShaderFlags, 0, NULL, ppBlobOut, &pErrorBlob, NULL);
+    hr = D3DX11CompileFromFile(szFileName, nullptr, nullptr, szEntryPoint, szShaderModel,
+                               dwShaderFlags, 0, nullptr, ppBlobOut, &pErrorBlob, nullptr);
     if (FAILED(hr)) {
-        if (pErrorBlob != NULL)
+        if (pErrorBlob != nullptr)
             OutputDebugStringA(( char* )pErrorBlob->GetBufferPointer());
         if (pErrorBlob)
             pErrorBlob->Release();
@@ -86,7 +86,7 @@ Core::Core(const HWND windowHandle)
 
     for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++) {
         mDriverType = driverTypes[driverTypeIndex];
-        hr = D3D11CreateDeviceAndSwapChain(NULL, mDriverType, NULL, createDeviceFlags, featureLevels, numFeatureLevels,
+        hr = D3D11CreateDeviceAndSwapChain(nullptr, mDriverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
                                            D3D11_SDK_VERSION, &sd, &mSwapChain, &mD3dDevice, &mFeatureLevel, &mImmediateContext);
         if (SUCCEEDED(hr))
             break;
@@ -94,30 +94,30 @@ Core::Core(const HWND windowHandle)
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"Driver initialization failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"Driver initialization failed", L"Error", MB_OK);
         return;
     }
 
     // Create a render target view
-    ID3D11Texture2D* pBackBuffer = NULL;
+    ID3D11Texture2D* pBackBuffer = nullptr;
     hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), ( LPVOID* )&pBackBuffer);
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"Swapchain initialization failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"Swapchain initialization failed", L"Error", MB_OK);
         return;
     }
 
-    hr = mD3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &mRenderTargetView);
+    hr = mD3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &mRenderTargetView);
     pBackBuffer->Release();
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"RenderTargetView creation failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"RenderTargetView creation failed", L"Error", MB_OK);
         return;
     }
 
-    mImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
+    mImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, nullptr);
 
     // Setup the viewport
     D3D11_VIEWPORT vp;
@@ -130,21 +130,21 @@ Core::Core(const HWND windowHandle)
     mImmediateContext->RSSetViewports(1, &vp);
 
     // Compile the vertex shader
-    ID3DBlob* pVSBlob = NULL;
+    ID3DBlob* pVSBlob = nullptr;
     hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "VS", "vs_4_0", &pVSBlob);
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"VertexShader compiling failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"VertexShader compiling failed", L"Error", MB_OK);
         return;
     }
 
     // Create the vertex shader
-    hr = mD3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &mVertexShader);
+    hr = mD3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &mVertexShader);
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"VertexShader creation failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"VertexShader creation failed", L"Error", MB_OK);
         return;
     }
 
@@ -161,7 +161,7 @@ Core::Core(const HWND windowHandle)
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"InputLayout initialization failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"InputLayout initialization failed", L"Error", MB_OK);
         return;
     }
 
@@ -169,22 +169,22 @@ Core::Core(const HWND windowHandle)
     mImmediateContext->IASetInputLayout(mVertexLayout);
 
     // Compile the pixel shader
-    ID3DBlob* pPSBlob = NULL;
+    ID3DBlob* pPSBlob = nullptr;
     hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "PS", "ps_4_0", &pPSBlob);
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"PixelShader compiling failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"PixelShader compiling failed", L"Error", MB_OK);
         return;
     }
 
     // Create the pixel shader
-    hr = mD3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &mPixelShader);
+    hr = mD3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &mPixelShader);
     pPSBlob->Release();
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"PixelShader creation failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"PixelShader creation failed", L"Error", MB_OK);
         return;
     }
 
@@ -207,7 +207,7 @@ Core::Core(const HWND windowHandle)
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
-        MessageBox(NULL, L"VertexBuffer initialization failed", L"Error", MB_OK);
+        MessageBox(nullptr, L"VertexBuffer initialization failed", L"Error", MB_OK);
         return;
     }
 
@@ -236,8 +236,8 @@ auto Core::Update() -> void {
 
 auto Core::Draw() -> void const {
     // Render a triangle
-    mImmediateContext->VSSetShader(mVertexShader, NULL, 0);
-    mImmediateContext->PSSetShader(mPixelShader, NULL, 0);
+    mImmediateContext->VSSetShader(mVertexShader, nullptr, 0);
+    mImmediateContext->PSSetShader(mPixelShader, nullptr, 0);
     mImmediateContext->Draw(3, 0);
 
     // Present the information rendered to the back buffer to the front buffer (the screen)
