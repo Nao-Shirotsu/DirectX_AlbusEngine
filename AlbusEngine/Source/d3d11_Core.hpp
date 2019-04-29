@@ -1,5 +1,6 @@
 ﻿#pragma once
 #pragma once
+#pragma once
 #include <d3d11.h>
 
 namespace shi62::d3d11 {
@@ -14,8 +15,7 @@ public:
     // リソース解放
     ~Core();
 
-    [[nodiscard]]
-    auto TerminationRequested() -> bool;
+    [[nodiscard]] auto TerminationRequested() -> bool;
 
     auto Update() -> void;
 
@@ -23,6 +23,11 @@ public:
 
 private:
     auto CleanupDevice() -> void;
+    auto CreateVertexPosBuffer() -> void;
+    auto CreateVertexColorBuffer() -> void;
+
+    // エラー処理関数 (命名が難しいので役割過多だよ、あとで治しとけ)
+    auto HandleError(LPCWSTR errMsg) -> void;
 
     bool terminationRequested;
     HWND mWindowHandle;
@@ -35,7 +40,8 @@ private:
     ID3D11VertexShader* mVertexShader;
     ID3D11PixelShader* mPixelShader;
     ID3D11InputLayout* mVertexLayout;
-    ID3D11Buffer* mVertexBuffer;
+    ID3D11Buffer* mVertexPos;
+    ID3D11Buffer* mVertexColor;
 };
 
 } // namespace shi62::d3d11

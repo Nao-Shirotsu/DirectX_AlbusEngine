@@ -43,7 +43,7 @@ Core::Core(const HWND windowHandle)
     , mVertexShader(nullptr)
     , mPixelShader(nullptr)
     , mVertexLayout(nullptr)
-    , mVertexBuffer(nullptr) {
+    , mVertexPos(nullptr) {
     HRESULT hr = S_OK;
 
     RECT rect;
@@ -92,9 +92,7 @@ Core::Core(const HWND windowHandle)
             break;
     }
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"Driver initialization failed", L"Error", MB_OK);
+        HandleError(L"Driver initialization failed");
         return;
     }
 
@@ -102,18 +100,14 @@ Core::Core(const HWND windowHandle)
     ID3D11Texture2D* pBackBuffer = nullptr;
     hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), ( LPVOID* )&pBackBuffer);
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"Swapchain initialization failed", L"Error", MB_OK);
+        HandleError(L"Swapchain initialization failed");
         return;
     }
 
     hr = mD3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &mRenderTargetView);
     pBackBuffer->Release();
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"RenderTargetView creation failed", L"Error", MB_OK);
+        HandleError(L"RenderTargetView creation failed");
         return;
     }
 
@@ -133,18 +127,14 @@ Core::Core(const HWND windowHandle)
     ID3DBlob* pVSBlob = nullptr;
     hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "VS", "vs_4_0", &pVSBlob);
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"VertexShader compiling failed", L"Error", MB_OK);
+        HandleError(L"VertexShader compiling failed");
         return;
     }
 
     // Create the vertex shader
     hr = mD3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &mVertexShader);
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"VertexShader creation failed", L"Error", MB_OK);
+        HandleError(L"VertexShader creation failed");
         return;
     }
 
@@ -159,9 +149,7 @@ Core::Core(const HWND windowHandle)
                                        pVSBlob->GetBufferSize(), &mVertexLayout);
     pVSBlob->Release();
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"InputLayout initialization failed", L"Error", MB_OK);
+        HandleError(L"InputLayout initialization failed");
         return;
     }
 
@@ -172,9 +160,7 @@ Core::Core(const HWND windowHandle)
     ID3DBlob* pPSBlob = nullptr;
     hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "PS", "ps_4_0", &pPSBlob);
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"PixelShader compiling failed", L"Error", MB_OK);
+        HandleError(L"PixelShader compiling failed");
         return;
     }
 
@@ -182,39 +168,14 @@ Core::Core(const HWND windowHandle)
     hr = mD3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &mPixelShader);
     pPSBlob->Release();
     if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"PixelShader creation failed", L"Error", MB_OK);
-        return;
-    }
-
-    // Create vertex buffer
-    XMFLOAT3 vertices[] = {
-        XMFLOAT3(-0.75f, 0.75f, 1.0f),
-        XMFLOAT3(0.75f, -0.625f, 1.0f),
-        XMFLOAT3(-0.80f, -0.75f, 1.0f),
-    };
-    D3D11_BUFFER_DESC bd;
-    ZeroMemory(&bd, sizeof(bd));
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof(XMFLOAT3) * 3;
-    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
-    bd.CPUAccessFlags = 0;
-    D3D11_SUBRESOURCE_DATA InitData;
-    ZeroMemory(&InitData, sizeof(InitData));
-    InitData.pSysMem = vertices;
-    hr = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexBuffer);
-    if (FAILED(hr)) {
-        CleanupDevice();
-        terminationRequested = true;
-        MessageBox(nullptr, L"VertexBuffer initialization failed", L"Error", MB_OK);
+        HandleError(L"PixelShader creation failed");
         return;
     }
 
     // Set vertex buffer
     UINT stride = sizeof(XMFLOAT3);
     UINT offset = 0;
-    mImmediateContext->IASetVertexBuffers(0, 1, &mVertexBuffer, &stride, &offset);
+    mImmediateContext->IASetVertexBuffers(0, 1, &mVertexPos, &stride, &offset);
 
     // Set primitive topology
     mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -247,8 +208,8 @@ auto Core::Draw() -> void const {
 auto Core::CleanupDevice() -> void {
     if (mImmediateContext)
         mImmediateContext->ClearState();
-    if (mVertexBuffer)
-        mVertexBuffer->Release();
+    if (mVertexPos)
+        mVertexPos->Release();
     if (mVertexLayout)
         mVertexLayout->Release();
     if (mVertexShader)
@@ -265,4 +226,64 @@ auto Core::CleanupDevice() -> void {
         mD3dDevice->Release();
 }
 
+auto Core::HandleError(LPCWSTR errMsg) -> void {
+    CleanupDevice();
+    terminationRequested = true;
+    MessageBox(nullptr, errMsg, L"Error", MB_OK);
+}
+
 } // namespace shi62::d3d11
+
+auto shi62::d3d11::Core::CreateVertexPosBuffer() -> void {
+    XMFLOAT3 verticesPos[] = {
+        XMFLOAT3(-1.0f, 1.0f, -1.0f),
+        XMFLOAT3(1.0f, 1.0f, -1.0f),
+        XMFLOAT3(1.0f, -1.0f, -1.0f),
+        XMFLOAT3(-1.0f, -1.0f, -1.0f),
+        XMFLOAT3(-1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, -1.0f, 1.0f),
+        XMFLOAT3(-1.0f, -1.0f, 1.0f),
+    };
+    D3D11_BUFFER_DESC bd;
+    ZeroMemory(&bd, sizeof(bd));
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(XMFLOAT3) * 8;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(InitData));
+    InitData.pSysMem = verticesPos;
+    auto hr = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexPos);
+    if (FAILED(hr)) {
+        HandleError(L"VertexBuffer initialization failed");
+        return;
+    }
+}
+
+auto shi62::d3d11::Core::CreateVertexColorBuffer() -> void {
+    XMFLOAT3 verticesColor[] = {
+        XMFLOAT3(0.0f, 0.0f, 0.0f),
+        XMFLOAT3(0.0f, 0.0f, 1.0f),
+        XMFLOAT3(0.0f, 1.0f, 0.0f),
+        XMFLOAT3(0.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 0.0f, 0.0f),
+        XMFLOAT3(1.0f, 0.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 0.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+    };
+    D3D11_BUFFER_DESC bd;
+    ZeroMemory(&bd, sizeof(bd));
+    bd.Usage = D3D11_USAGE_DEFAULT;
+    bd.ByteWidth = sizeof(XMFLOAT3) * 8;
+    bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+    bd.CPUAccessFlags = 0;
+    D3D11_SUBRESOURCE_DATA InitData;
+    ZeroMemory(&InitData, sizeof(InitData));
+    InitData.pSysMem = verticesColor;
+    auto hr = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexColor);
+    if (FAILED(hr)) {
+        HandleError(L"VertexBuffer initialization failed");
+        return;
+    }
+}
