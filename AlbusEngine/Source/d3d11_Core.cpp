@@ -131,7 +131,7 @@ Core::Core(const HWND windowHandle)
 
     // Compile the vertex shader
     ID3DBlob* pVSBlob = NULL;
-    hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "VertexShade", "vs_4_0", &pVSBlob);
+    hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "VS", "vs_4_0", &pVSBlob);
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;
@@ -170,7 +170,7 @@ Core::Core(const HWND windowHandle)
 
     // Compile the pixel shader
     ID3DBlob* pPSBlob = NULL;
-    hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "PixelShade", "ps_4_0", &pPSBlob);
+    hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "PS", "ps_4_0", &pPSBlob);
     if (FAILED(hr)) {
         CleanupDevice();
         terminationRequested = true;

@@ -8,15 +8,18 @@ namespace shi62::winapi {
 class Window {
 public:
     Window(HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR windowTitle, const int width, const int height);
+
     ~Window();
 
     // ループ処理一回分を実行
     auto Update() -> void;
 
     // ウィンドウ終了処理が始まるときtrue
+    [[nodiscard]]
     auto TerminationRequested() -> bool const;
 
     // mWindowHandleをぶん投げる
+    [[nodiscard]]
     auto GetWindowHandle() -> HWND const;
 
 private:

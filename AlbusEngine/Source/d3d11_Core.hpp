@@ -14,8 +14,11 @@ public:
     // リソース解放
     ~Core();
 
+    [[nodiscard]]
     auto TerminationRequested() -> bool;
+
     auto Update() -> void;
+
     auto Draw() -> void const;
 
 private:
