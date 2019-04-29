@@ -31,9 +31,9 @@ auto CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR 
     return S_OK;
 }
 
-Core::Core( const HWND windowHandle )
-    : terminationRequested( false )
-    , mWindowHandle( windowHandle )
+Core::Core(const HWND windowHandle)
+    : terminationRequested(false)
+    , mWindowHandle(windowHandle)
     , mDriverType(D3D_DRIVER_TYPE_NULL)
     , mFeatureLevel(D3D_FEATURE_LEVEL_11_0)
     , mD3dDevice(nullptr)
@@ -44,31 +44,6 @@ Core::Core( const HWND windowHandle )
     , mPixelShader(nullptr)
     , mVertexLayout(nullptr)
     , mVertexBuffer(nullptr) {
-    if (auto res = FAILED(InitDevice())) {
-        CleanupDevice();
-        if (res != 0) {
-            terminationRequested = true;
-        }
-    }
-}
-
-Core::~Core() {
-    CleanupDevice();
-}
-
-auto Core::TerminationRequested() -> bool {
-    return terminationRequested;
-}
-
-auto Core::Update() -> void {
-    Render();
-}
-
-auto Core::Draw() -> void const {
-    return;
-}
-
-auto Core::InitDevice() -> HRESULT {
     HRESULT hr = S_OK;
 
     RECT rect;
@@ -80,7 +55,7 @@ auto Core::InitDevice() -> HRESULT {
 #ifdef _DEBUG
     createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
-    
+
     D3D_DRIVER_TYPE driverTypes[] = {
         D3D_DRIVER_TYPE_HARDWARE,
         D3D_DRIVER_TYPE_WARP,
@@ -116,19 +91,31 @@ auto Core::InitDevice() -> HRESULT {
         if (SUCCEEDED(hr))
             break;
     }
-    if (FAILED(hr))
-        return hr;
+    if (FAILED(hr)) {
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"Driver initialization failed", L"Error", MB_OK);
+        return;
+    }
 
     // Create a render target view
     ID3D11Texture2D* pBackBuffer = NULL;
     hr = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), ( LPVOID* )&pBackBuffer);
-    if (FAILED(hr))
-        return hr;
+    if (FAILED(hr)) {
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"Swapchain initialization failed", L"Error", MB_OK);
+        return;
+    }
 
     hr = mD3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &mRenderTargetView);
     pBackBuffer->Release();
-    if (FAILED(hr))
-        return hr;
+    if (FAILED(hr)) {
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"RenderTargetView creation failed", L"Error", MB_OK);
+        return;
+    }
 
     mImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, NULL);
 
@@ -146,16 +133,19 @@ auto Core::InitDevice() -> HRESULT {
     ID3DBlob* pVSBlob = NULL;
     hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "VertexShade", "vs_4_0", &pVSBlob);
     if (FAILED(hr)) {
-        MessageBox(NULL,
-                   L"VertexShader loading failed", L"Error", MB_OK);
-        return hr;
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"VertexShader compiling failed", L"Error", MB_OK);
+        return;
     }
 
     // Create the vertex shader
     hr = mD3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), NULL, &mVertexShader);
     if (FAILED(hr)) {
-        pVSBlob->Release();
-        return hr;
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"VertexShader creation failed", L"Error", MB_OK);
+        return;
     }
 
     // Define the input layout
@@ -168,8 +158,12 @@ auto Core::InitDevice() -> HRESULT {
     hr = mD3dDevice->CreateInputLayout(layout, numElements, pVSBlob->GetBufferPointer(),
                                        pVSBlob->GetBufferSize(), &mVertexLayout);
     pVSBlob->Release();
-    if (FAILED(hr))
-        return hr;
+    if (FAILED(hr)) {
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"InputLayout initialization failed", L"Error", MB_OK);
+        return;
+    }
 
     // Set the input layout
     mImmediateContext->IASetInputLayout(mVertexLayout);
@@ -178,16 +172,21 @@ auto Core::InitDevice() -> HRESULT {
     ID3DBlob* pPSBlob = NULL;
     hr = CompileShaderFromFile(L"Vertex_Pixel.fx", "PixelShade", "ps_4_0", &pPSBlob);
     if (FAILED(hr)) {
-        MessageBox(NULL,
-                   L"PixelShader loading failed", L"Error", MB_OK);
-        return hr;
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"PixelShader compiling failed", L"Error", MB_OK);
+        return;
     }
 
     // Create the pixel shader
     hr = mD3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), NULL, &mPixelShader);
     pPSBlob->Release();
-    if (FAILED(hr))
-        return hr;
+    if (FAILED(hr)) {
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"PixelShader creation failed", L"Error", MB_OK);
+        return;
+    }
 
     // Create vertex buffer
     XMFLOAT3 vertices[] = {
@@ -205,8 +204,12 @@ auto Core::InitDevice() -> HRESULT {
     ZeroMemory(&InitData, sizeof(InitData));
     InitData.pSysMem = vertices;
     hr = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexBuffer);
-    if (FAILED(hr))
-        return hr;
+    if (FAILED(hr)) {
+        CleanupDevice();
+        terminationRequested = true;
+        MessageBox(NULL, L"VertexBuffer initialization failed", L"Error", MB_OK);
+        return;
+    }
 
     // Set vertex buffer
     UINT stride = sizeof(XMFLOAT3);
@@ -215,8 +218,30 @@ auto Core::InitDevice() -> HRESULT {
 
     // Set primitive topology
     mImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+}
 
-    return S_OK;
+Core::~Core() {
+    CleanupDevice();
+}
+
+auto Core::TerminationRequested() -> bool {
+    return terminationRequested;
+}
+
+auto Core::Update() -> void {
+    // Clear the back buffer
+    float ClearColor[4] = { 0.0f, 0.125f, 0.25f, 0.75f }; // red,green,blue,alpha
+    mImmediateContext->ClearRenderTargetView(mRenderTargetView, ClearColor);
+}
+
+auto Core::Draw() -> void const {
+    // Render a triangle
+    mImmediateContext->VSSetShader(mVertexShader, NULL, 0);
+    mImmediateContext->PSSetShader(mPixelShader, NULL, 0);
+    mImmediateContext->Draw(3, 0);
+
+    // Present the information rendered to the back buffer to the front buffer (the screen)
+    mSwapChain->Present(0, 0);
 }
 
 auto Core::CleanupDevice() -> void {
@@ -238,20 +263,6 @@ auto Core::CleanupDevice() -> void {
         mImmediateContext->Release();
     if (mD3dDevice)
         mD3dDevice->Release();
-}
-
-auto Core::Render() -> void {
-    // Clear the back buffer
-    float ClearColor[4] = { 0.0f, 0.125f, 0.25f, 0.75f }; // red,green,blue,alpha
-    mImmediateContext->ClearRenderTargetView(mRenderTargetView, ClearColor);
-
-    // Render a triangle
-    mImmediateContext->VSSetShader(mVertexShader, NULL, 0);
-    mImmediateContext->PSSetShader(mPixelShader, NULL, 0);
-    mImmediateContext->Draw(3, 0);
-
-    // Present the information rendered to the back buffer to the front buffer (the screen)
-    mSwapChain->Present(0, 0);
 }
 
 } // namespace shi62::d3d11

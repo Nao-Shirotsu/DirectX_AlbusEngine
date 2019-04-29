@@ -19,9 +19,7 @@ public:
     auto Draw() -> void const;
 
 private:
-    auto InitDevice() -> HRESULT;
     auto CleanupDevice() -> void;
-    auto Render() -> void;
 
     bool terminationRequested;
     HWND mWindowHandle;
