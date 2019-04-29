@@ -1,7 +1,6 @@
 ﻿#pragma once
+#pragma once
 #include <windows.h>
-
-#include "winapi_HwndHolder.hpp"
 
 namespace shi62::winapi {
 
@@ -17,8 +16,8 @@ public:
     // ウィンドウ終了処理が始まるときtrue
     auto TerminationRequested() -> bool const;
 
-    // HwndHolderにウィンドウハンドルを教える
-    auto InjectHwnd(HwndHolder& holder) -> void const;
+    // mWindowHandleをぶん投げる
+    auto GetWindowHandle() -> HWND const;
 
 private:
     HINSTANCE mInstanceHandle;

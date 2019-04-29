@@ -21,9 +21,6 @@
     <ClCompile Include="Source\d3d11_Core.cpp">
       <Filter>shi62\d3d11</Filter>
     </ClCompile>
-    <ClCompile Include="Source\winapi_HwndHolder.cpp">
-      <Filter>shi62\winapi</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\winapi_Window.hpp">
@@ -31,9 +28,6 @@
     </ClInclude>
     <ClInclude Include="Source\d3d11_Core.hpp">
       <Filter>shi62\d3d11</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\winapi_HwndHolder.hpp">
-      <Filter>shi62\winapi</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

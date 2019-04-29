@@ -91,10 +91,6 @@ auto Window::TerminationRequested() -> bool const {
     return mMessage.message == WM_QUIT || mMessageState == -1; // 終了時とエラー発生時
 }
 
-auto Window::InjectHwnd( HwndHolder& holder ) -> void const {
-    holder.SetHwnd(mWindowHandle);
-}
-
 auto ProcessKeydownMessage(HWND windowHandle, WPARAM wParam) -> void {
     switch (wParam) {
     case VK_ESCAPE:
@@ -103,4 +99,8 @@ auto ProcessKeydownMessage(HWND windowHandle, WPARAM wParam) -> void {
     }
 }
 
+}
+
+auto shi62::winapi::Window::GetWindowHandle() -> HWND const {
+    return mWindowHandle;
 }

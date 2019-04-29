@@ -1,22 +1,20 @@
 ﻿#pragma once
+#pragma once
 #include <d3d11.h>
-
-#include "winapi_HwndHolder.hpp"
 
 namespace shi62::d3d11 {
 
 // D3D全般の処理をやっつけるクラス
 // 流石に神クラスなので分割すべきではある...
-class Core : public winapi::HwndHolder {
+class Core {
 public:
-    // 何もしない
-    Core();
+    // 色々初期化
+    Core(const HWND windowHandle);
 
     // リソース解放
     ~Core();
 
-    // コンストラクタとは別に初期化する
-    auto Init() -> void;
+    auto TerminationRequested() -> bool;
     auto Update() -> void;
     auto Draw() -> void const;
 
@@ -25,6 +23,8 @@ private:
     auto CleanupDevice() -> void;
     auto Render() -> void;
 
+    bool terminationRequested;
+    HWND mWindowHandle;
     D3D_DRIVER_TYPE mDriverType;
     D3D_FEATURE_LEVEL mFeatureLevel;
     ID3D11Device* mD3dDevice;

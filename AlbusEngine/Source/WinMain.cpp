@@ -10,11 +10,9 @@ int WINAPI wWinMain(HINSTANCE hInstance,
     UNREFERENCED_PARAMETER(nCmdShow);
 
     shi62::winapi::Window window(hInstance, L"win1", L"D3D11 自転立方体", 400, 300);
-    shi62::d3d11::Core d3dCore;
-    window.InjectHwnd(d3dCore);
-    d3dCore.Init();
+    shi62::d3d11::Core d3dCore( window.GetWindowHandle() );
 
-    while (!window.TerminationRequested()) {
+    while (!window.TerminationRequested() && !d3dCore.TerminationRequested()) {
         window.Update();
         d3dCore.Update();
         d3dCore.Draw();

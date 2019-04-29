@@ -150,13 +150,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Source\d3d11_Core.cpp" />
-    <ClCompile Include="Source\winapi_HwndHolder.cpp" />
     <ClCompile Include="Source\winapi_Window.cpp" />
     <ClCompile Include="Source\WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\d3d11_Core.hpp" />
-    <ClInclude Include="Source\winapi_HwndHolder.hpp" />
     <ClInclude Include="Source\winapi_Window.hpp" />
   </ItemGroup>
   <ItemGroup>

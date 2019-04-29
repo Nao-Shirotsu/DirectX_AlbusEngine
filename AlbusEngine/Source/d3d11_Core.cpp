@@ -1,4 +1,4 @@
-﻿#include <crtdbg.h>
+﻿#include <d3d11.h>
 #include <d3dcompiler.h>
 #include <d3dx11async.h>
 #include <xnamath.h>
@@ -31,8 +31,10 @@ auto CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR 
     return S_OK;
 }
 
-Core::Core()
-    : mDriverType(D3D_DRIVER_TYPE_NULL)
+Core::Core( const HWND windowHandle )
+    : terminationRequested( false )
+    , mWindowHandle( windowHandle )
+    , mDriverType(D3D_DRIVER_TYPE_NULL)
     , mFeatureLevel(D3D_FEATURE_LEVEL_11_0)
     , mD3dDevice(nullptr)
     , mImmediateContext(nullptr)
@@ -42,17 +44,20 @@ Core::Core()
     , mPixelShader(nullptr)
     , mVertexLayout(nullptr)
     , mVertexBuffer(nullptr) {
+    if (auto res = FAILED(InitDevice())) {
+        CleanupDevice();
+        if (res != 0) {
+            terminationRequested = true;
+        }
+    }
 }
 
 Core::~Core() {
     CleanupDevice();
 }
 
-auto Core::Init() -> void {
-    if (auto res = FAILED(InitDevice())) {
-        CleanupDevice();
-        _ASSERT_EXPR(res != 0, TEXT("Device Initialization Error"));
-    }
+auto Core::TerminationRequested() -> bool {
+    return terminationRequested;
 }
 
 auto Core::Update() -> void {
@@ -75,7 +80,7 @@ auto Core::InitDevice() -> HRESULT {
 #ifdef _DEBUG
     createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
-
+    
     D3D_DRIVER_TYPE driverTypes[] = {
         D3D_DRIVER_TYPE_HARDWARE,
         D3D_DRIVER_TYPE_WARP,
