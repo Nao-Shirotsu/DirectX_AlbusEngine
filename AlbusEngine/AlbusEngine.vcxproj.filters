@@ -33,4 +33,7 @@
   <ItemGroup>
     <None Include=".clang-format" />
   </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Vertex_Pixel.fx" />
+  </ItemGroup>
 </Project>
