@@ -7,7 +7,7 @@
 # AfterUnion
 
 BasedOnStyle: LLVM
-AccessModifierOffset: -4
+AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignEscapedNewlinesLeft: true
 AllowAllParametersOfDeclarationOnNextLine: false
@@ -34,7 +34,7 @@ Cpp11BracedListStyle: false
 FixNamespaceComments: false
 IndentCaseLabels: false
 IndentPPDirectives: None
-IndentWidth: 4
+IndentWidth: 2
 KeepEmptyLinesAtTheStartOfBlocks: false
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: None
@@ -45,5 +45,5 @@ SpaceBeforeParens: ControlStatements
 SpaceInEmptyParentheses: false
 SpacesInCStyleCastParentheses: true
 SpacesInSquareBrackets: false
-TabWidth: 4
+TabWidth: 2
 UseTab: false
