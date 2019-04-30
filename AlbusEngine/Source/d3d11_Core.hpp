@@ -67,7 +67,7 @@ private:
   ID3D11GeometryShader* mGeometryShader;
   ID3D11PixelShader* mPixelShader;
 
-  ID3D11Buffer* mCBuffer[3]; // 定数バッファ
+  ID3D11Buffer* mConstantBuffer[3]; // 定数バッファ
   XMFLOAT4X4 mCBNeverChanges;
   XMFLOAT4X4 mCBChangesEveryObject;
   CBChangesEveryFrame mCBChangesEveryFrame;

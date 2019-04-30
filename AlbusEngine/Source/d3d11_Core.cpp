@@ -23,12 +23,10 @@ auto CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR 
 Core::Core(const HWND windowHandle)
     : terminationRequested(false)
     , mWindowHandle(windowHandle)
-    , mFeatureLevel()
     , mD3dDevice(nullptr)
     , mImmediateContext(nullptr)
     , mSwapChain(nullptr)
     , mRenderTargetView(nullptr)
-    , mViewport()
     , mDepthStencilBuffer(nullptr)
     , mDepthStencilView(nullptr)
     , mVertexLayout(nullptr)
@@ -38,10 +36,7 @@ Core::Core(const HWND windowHandle)
     , mVertexShader(nullptr)
     , mGeometryShader(nullptr)
     , mPixelShader(nullptr)
-    , mCBuffer{ nullptr, nullptr, nullptr }
-    , mCBNeverChanges()
-    , mCBChangesEveryFrame()
-    , mCBChangesEveryObject()
+    , mConstantBuffer{ nullptr, nullptr, nullptr }
     , mLightPos(3.0f, 3.0f, -2.0f)
     , mBlendState(nullptr)
     , mRasterizerState(nullptr)
@@ -70,21 +65,21 @@ Core::Core(const HWND windowHandle)
   SetViewport(width, height);
 
   // Compile the vertex shader
-  ID3DBlob* pVSBlob = nullptr;
-  resultHandle = CompileShaderFromFile(L"Vertex_Pixel.fx", "VS", "vs_4_0", &pVSBlob);
+  ID3DBlob* blobVS = nullptr;
+  resultHandle = CompileShaderFromFile(L"Vertex_Pixel.fx", "VS", "vs_4_0", &blobVS);
   if (FAILED(resultHandle)) {
     HandleError(L"VertexShader compiling failed");
     return;
   }
 
   // Create the vertex shader
-  resultHandle = mD3dDevice->CreateVertexShader(pVSBlob->GetBufferPointer(), pVSBlob->GetBufferSize(), nullptr, &mVertexShader);
+  resultHandle = mD3dDevice->CreateVertexShader(blobVS->GetBufferPointer(), blobVS->GetBufferSize(), nullptr, &mVertexShader);
   if (FAILED(resultHandle)) {
     HandleError(L"VertexShader creation failed");
     return;
   }
 
-  resultHandle = DefineInputLayout(pVSBlob);
+  resultHandle = DefineInputLayout(blobVS);
   if (FAILED(resultHandle)) {
     HandleError(L"InputLayout initialization failed");
     return;
@@ -94,64 +89,64 @@ Core::Core(const HWND windowHandle)
   mImmediateContext->IASetInputLayout(mVertexLayout);
 
   // Compile the geometry shader
-  ID3DBlob* pGSBlob = nullptr;
-  resultHandle = CompileShaderFromFile(L"Vertex_Pixel.fx", "GS", "gs_4_0", &pGSBlob);
+  ID3DBlob* blobGS = nullptr;
+  resultHandle = CompileShaderFromFile(L"Vertex_Pixel.fx", "GS", "gs_4_0", &blobGS);
   if (FAILED(resultHandle)) {
     HandleError(L"GeometryShader compiling failed");
     return;
   }
 
   // Create the geometry shader
-  resultHandle = mD3dDevice->CreateGeometryShader(pGSBlob->GetBufferPointer(), pGSBlob->GetBufferSize(), nullptr, &mGeometryShader);
-  pGSBlob->Release();
+  resultHandle = mD3dDevice->CreateGeometryShader(blobGS->GetBufferPointer(), blobGS->GetBufferSize(), nullptr, &mGeometryShader);
+  blobGS->Release();
   if (FAILED(resultHandle)) {
     HandleError(L"GeometryShader creation failed");
     return;
   }
 
   // Compile the pixel shader
-  ID3DBlob* pPSBlob = nullptr;
-  resultHandle = CompileShaderFromFile(L"Vertex_Pixel.fx", "PS", "ps_4_0", &pPSBlob);
+  ID3DBlob* blobPS = nullptr;
+  resultHandle = CompileShaderFromFile(L"Vertex_Pixel.fx", "PS", "ps_4_0", &blobPS);
   if (FAILED(resultHandle)) {
     HandleError(L"PixelShader compiling failed");
     return;
   }
 
   // Create the pixel shader
-  resultHandle = mD3dDevice->CreatePixelShader(pPSBlob->GetBufferPointer(), pPSBlob->GetBufferSize(), nullptr, &mPixelShader);
-  pPSBlob->Release();
+  resultHandle = mD3dDevice->CreatePixelShader(blobPS->GetBufferPointer(), blobPS->GetBufferSize(), nullptr, &mPixelShader);
+  blobPS->Release();
   if (FAILED(resultHandle)) {
     HandleError(L"PixelShader creation failed");
     return;
   }
 
   // 定数バッファの定義
-  D3D11_BUFFER_DESC cBufferDesc;
-  cBufferDesc.Usage = D3D11_USAGE_DYNAMIC;             // 動的(ダイナミック)使用法
-  cBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;  // 定数バッファ
-  cBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // CPUから書き込む
-  cBufferDesc.MiscFlags = 0;
-  cBufferDesc.StructureByteStride = 0;
+  D3D11_BUFFER_DESC constantBufferDesc;
+  constantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;             // 動的(ダイナミック)使用法
+  constantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;  // 定数バッファ
+  constantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE; // CPUから書き込む
+  constantBufferDesc.MiscFlags = 0;
+  constantBufferDesc.StructureByteStride = 0;
 
   // 定数バッファ①の作成
-  cBufferDesc.ByteWidth = sizeof(XMFLOAT4X4); // バッファ・サイズ
-  resultHandle = mD3dDevice->CreateBuffer(&cBufferDesc, nullptr, &mCBuffer[0]);
+  constantBufferDesc.ByteWidth = sizeof(XMFLOAT4X4); // バッファ・サイズ
+  resultHandle = mD3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffer[0]);
   if (FAILED(resultHandle)) {
     HandleError(L"Constant buffer creation failed");
     return;
   }
 
   // 定数バッファ②の作成
-  cBufferDesc.ByteWidth = sizeof(CBChangesEveryFrame); // バッファ・サイズ
-  resultHandle = mD3dDevice->CreateBuffer(&cBufferDesc, nullptr, &mCBuffer[1]);
+  constantBufferDesc.ByteWidth = sizeof(CBChangesEveryFrame); // バッファ・サイズ
+  resultHandle = mD3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffer[1]);
   if (FAILED(resultHandle)) {
     HandleError(L"Constant buffer creation failed");
     return;
   }
 
   // 定数バッファ③の作成
-  cBufferDesc.ByteWidth = sizeof(XMFLOAT4X4); // バッファ・サイズ
-  resultHandle = mD3dDevice->CreateBuffer(&cBufferDesc, nullptr, &mCBuffer[2]);
+  constantBufferDesc.ByteWidth = sizeof(XMFLOAT4X4); // バッファ・サイズ
+  resultHandle = mD3dDevice->CreateBuffer(&constantBufferDesc, nullptr, &mConstantBuffer[2]);
   if (FAILED(resultHandle)) {
     HandleError(L"Constant buffer creation failed");
     return;
@@ -218,54 +213,54 @@ auto Core::Update() -> void {
 
   // 定数バッファ②を更新
   // ビュー変換行列
-  XMVECTORF32 eyePosition = { 0.0f, 5.0f, -5.0f, 1.0f };  // 視点(カメラの位置)
-  XMVECTORF32 focusPosition = { 0.0f, 0.0f, 0.0f, 1.0f }; // 注視点
-  XMVECTORF32 upDirection = { 0.0f, 1.0f, 0.0f, 1.0f };   // カメラの上方向
-  XMMATRIX mat = XMMatrixLookAtLH(eyePosition, focusPosition, upDirection);
+  XMVECTORF32 cameraPos = { 0.0f, 5.0f, -5.0f, 1.0f };  // 視点(カメラの位置)
+  XMVECTORF32 focusPos = { 0.0f, 0.0f, 0.0f, 1.0f }; // 注視点
+  XMVECTORF32 cameraDirUp = { 0.0f, 1.0f, 0.0f, 1.0f };   // カメラの上方向
+  XMMATRIX mat = XMMatrixLookAtLH(cameraPos, focusPos, cameraDirUp);
   XMStoreFloat4x4(&mCBChangesEveryFrame.View, XMMatrixTranspose(mat));
   // 点光源座標
-  XMVECTOR vec = XMVector3TransformCoord(XMLoadFloat3(&mLightPos), mat);
-  XMStoreFloat3(&mCBChangesEveryFrame.Light, vec);
+  XMVECTOR lightSourcePos = XMVector3TransformCoord(XMLoadFloat3(&mLightPos), mat);
+  XMStoreFloat3(&mCBChangesEveryFrame.Light, lightSourcePos);
   // 定数バッファ②のマップ取得
-  D3D11_MAPPED_SUBRESOURCE MappedResource;
+  D3D11_MAPPED_SUBRESOURCE mappedResource;
   auto resultHandle = mImmediateContext->Map(
-      mCBuffer[1],             // マップするリソース
+      mConstantBuffer[1],             // マップするリソース
       0,                       // サブリソースのインデックス番号
       D3D11_MAP_WRITE_DISCARD, // 書き込みアクセス
       0,                       //
-      &MappedResource);        // データの書き込み先ポインタ
+      &mappedResource);        // データの書き込み先ポインタ
   if (FAILED(resultHandle)) {
     HandleError(L"ConstantBuffer mapping failed");
     return;
   }
   // データ書き込み
-  CopyMemory(MappedResource.pData, &mCBChangesEveryFrame, sizeof(CBChangesEveryFrame));
+  CopyMemory(mappedResource.pData, &mCBChangesEveryFrame, sizeof(CBChangesEveryFrame));
   // マップ解除
-  mImmediateContext->Unmap(mCBuffer[1], 0);
+  mImmediateContext->Unmap(mConstantBuffer[1], 0);
 
   // 定数バッファ③を更新
   // ワールド変換行列
   XMMATRIX matY, matX;
-  FLOAT rotate = (FLOAT)(XM_PI * (timeGetTime() % 3000)) / 1500.0f;
-  matY = XMMatrixRotationY(rotate);
-  rotate = (FLOAT)(XM_PI * (timeGetTime() % 1500)) / 750.0f;
-  matX = XMMatrixRotationX(rotate);
+  FLOAT rotationDiff = static_cast<FLOAT>(XM_PI * (timeGetTime() % 3000)) / 1500.0f;
+  matY = XMMatrixRotationY(rotationDiff);
+  rotationDiff = static_cast<FLOAT>(XM_PI * (timeGetTime() % 3000)) / 1500.0f;
+  matX = XMMatrixRotationX(rotationDiff);
   XMStoreFloat4x4(&mCBChangesEveryObject, XMMatrixTranspose(matY * matX));
   // 定数バッファ③のマップ取得
   resultHandle = mImmediateContext->Map(
-      mCBuffer[2],             // マップするリソース
+      mConstantBuffer[2],             // マップするリソース
       0,                       // サブリソースのインデックス番号
       D3D11_MAP_WRITE_DISCARD, // 書き込みアクセス
       0,                       //
-      &MappedResource);        // データの書き込み先ポインタ
+      &mappedResource);        // データの書き込み先ポインタ
   if (FAILED(resultHandle)) {
     HandleError(L"ConstantBuffer mapping failed");
     return;
   }
   // データ書き込み
-  CopyMemory(MappedResource.pData, &mCBChangesEveryObject, sizeof(XMFLOAT4X4));
+  CopyMemory(mappedResource.pData, &mCBChangesEveryObject, sizeof(XMFLOAT4X4));
   // マップ解除
-  mImmediateContext->Unmap(mCBuffer[2], 0);
+  mImmediateContext->Unmap(mConstantBuffer[2], 0);
 
   // ***************************************
   // IAに頂点バッファを設定
@@ -282,12 +277,12 @@ auto Core::Update() -> void {
   // VSに頂点シェーダを設定
   mImmediateContext->VSSetShader(mVertexShader, nullptr, 0);
   // VSに定数バッファを設定
-  mImmediateContext->VSSetConstantBuffers(0, 3, mCBuffer);
+  mImmediateContext->VSSetConstantBuffers(0, 3, mConstantBuffer);
 
   // GSにジオメトリ・シェーダを設定
   mImmediateContext->GSSetShader(mGeometryShader, nullptr, 0);
   // GSに定数バッファを設定
-  mImmediateContext->GSSetConstantBuffers(0, 3, mCBuffer);
+  mImmediateContext->GSSetConstantBuffers(0, 3, mConstantBuffer);
 
   // RSにビューポートを設定
   mImmediateContext->RSSetViewports(1, &mViewport);
@@ -297,7 +292,7 @@ auto Core::Update() -> void {
   // PSにピクセル・シェーダを設定
   mImmediateContext->PSSetShader(mPixelShader, nullptr, 0);
   // PSに定数バッファを設定
-  mImmediateContext->PSSetConstantBuffers(0, 3, mCBuffer);
+  mImmediateContext->PSSetConstantBuffers(0, 3, mConstantBuffer);
 
   // OMに描画ターゲット ビューと深度/ステンシル・ビューを設定
   mImmediateContext->OMSetRenderTargets(1, &mRenderTargetView, mDepthStencilView);
@@ -344,9 +339,9 @@ auto Core::CleanupDevice() -> void {
   SAFE_RELEASE(mBlendState);
   SAFE_RELEASE(mRasterizerState);
 
-  SAFE_RELEASE(mCBuffer[2]);
-  SAFE_RELEASE(mCBuffer[1]);
-  SAFE_RELEASE(mCBuffer[0]);
+  SAFE_RELEASE(mConstantBuffer[2]);
+  SAFE_RELEASE(mConstantBuffer[1]);
+  SAFE_RELEASE(mConstantBuffer[0]);
 
   SAFE_RELEASE(mVertexLayout);
 
@@ -356,6 +351,7 @@ auto Core::CleanupDevice() -> void {
 
   SAFE_RELEASE(mVertexIndex);
   SAFE_RELEASE(mVertexPos);
+
   SAFE_RELEASE(mVertexColor);
 
   SAFE_RELEASE(mDepthStencilView);
@@ -397,27 +393,27 @@ auto shi62::d3d11::Core::CreateDevice(const UINT width, const UINT height) -> HR
   };
   UINT numFeatureLevels = ARRAYSIZE(featureLevels);
 
-  DXGI_SWAP_CHAIN_DESC sd;
-  ZeroMemory(&sd, sizeof(sd));
-  sd.BufferCount = 3;
-  sd.BufferDesc.Width = width;
-  sd.BufferDesc.Height = height;
-  sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-  sd.BufferDesc.RefreshRate.Numerator = 60;
-  sd.BufferDesc.RefreshRate.Denominator = 1;
-  sd.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
-  sd.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
-  sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-  sd.OutputWindow = mWindowHandle;
-  sd.SampleDesc.Count = 1;
-  sd.SampleDesc.Quality = 0;
-  sd.Windowed = TRUE;
-  sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
+  DXGI_SWAP_CHAIN_DESC swapChainDesc;
+  ZeroMemory(&swapChainDesc, sizeof(swapChainDesc));
+  swapChainDesc.BufferCount = 3;
+  swapChainDesc.BufferDesc.Width = width;
+  swapChainDesc.BufferDesc.Height = height;
+  swapChainDesc.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
+  swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
+  swapChainDesc.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
+  swapChainDesc.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
+  swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+  swapChainDesc.OutputWindow = mWindowHandle;
+  swapChainDesc.SampleDesc.Count = 1;
+  swapChainDesc.SampleDesc.Quality = 0;
+  swapChainDesc.Windowed = TRUE;
+  swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
   for (UINT driverTypeIndex = 0; driverTypeIndex < numDriverTypes; driverTypeIndex++) {
     auto driverType = driverTypes[driverTypeIndex];
     auto resultHandle = D3D11CreateDeviceAndSwapChain(nullptr, driverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
-                                                      D3D11_SDK_VERSION, &sd, &mSwapChain, &mD3dDevice, &mFeatureLevel, &mImmediateContext);
+                                                      D3D11_SDK_VERSION, &swapChainDesc, &mSwapChain, &mD3dDevice, &mFeatureLevel, &mImmediateContext);
     if (SUCCEEDED(resultHandle)) {
       return resultHandle;
     }
@@ -439,16 +435,16 @@ auto shi62::d3d11::Core::CreateVertexPosBuffer() -> void {
     XMFLOAT3(-1.0f, -1.0f, 1.0f),
   };
 
-  D3D11_BUFFER_DESC bd;
-  ZeroMemory(&bd, sizeof(bd));
-  bd.Usage = D3D11_USAGE_DEFAULT;
-  bd.ByteWidth = sizeof(XMFLOAT3) * 8;
-  bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+  D3D11_BUFFER_DESC bufferDesc;
+  ZeroMemory(&bufferDesc, sizeof(bufferDesc));
+  bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  bufferDesc.ByteWidth = sizeof(XMFLOAT3) * 8;
+  bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
   D3D11_SUBRESOURCE_DATA InitData;
   ZeroMemory(&InitData, sizeof(InitData));
   InitData.pSysMem = verticesPos;
-  auto resultHandle = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexPos);
+  auto resultHandle = mD3dDevice->CreateBuffer(&bufferDesc, &InitData, &mVertexPos);
   if (FAILED(resultHandle)) {
     HandleError(L"VertexBuffer initialization failed");
     return;
@@ -467,16 +463,16 @@ auto shi62::d3d11::Core::CreateVertexColorBuffer() -> void {
     XMFLOAT3(1.0f, 1.0f, 1.0f),
   };
 
-  D3D11_BUFFER_DESC bd;
-  ZeroMemory(&bd, sizeof(bd));
-  bd.Usage = D3D11_USAGE_DEFAULT;
-  bd.ByteWidth = sizeof(XMFLOAT3) * 8;
-  bd.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+  D3D11_BUFFER_DESC bufferDesc;
+  ZeroMemory(&bufferDesc, sizeof(bufferDesc));
+  bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  bufferDesc.ByteWidth = sizeof(XMFLOAT3) * 8;
+  bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
 
   D3D11_SUBRESOURCE_DATA InitData;
   ZeroMemory(&InitData, sizeof(InitData));
   InitData.pSysMem = verticesColor;
-  auto resultHandle = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexColor);
+  auto resultHandle = mD3dDevice->CreateBuffer(&bufferDesc, &InitData, &mVertexColor);
   if (FAILED(resultHandle)) {
     HandleError(L"VertexBuffer initialization failed");
     return;
@@ -500,16 +496,16 @@ auto shi62::d3d11::Core::CreateVertexIndexBuffer() -> void {
     2, 6, 7
   };
 
-  D3D11_BUFFER_DESC bd;
-  ZeroMemory(&bd, sizeof(bd));
-  bd.Usage = D3D11_USAGE_DEFAULT;
-  bd.ByteWidth = sizeof(XMFLOAT3) * 36;
-  bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
+  D3D11_BUFFER_DESC bufferDesc;
+  ZeroMemory(&bufferDesc, sizeof(bufferDesc));
+  bufferDesc.Usage = D3D11_USAGE_DEFAULT;
+  bufferDesc.ByteWidth = sizeof(XMFLOAT3) * 36;
+  bufferDesc.BindFlags = D3D11_BIND_INDEX_BUFFER;
 
   D3D11_SUBRESOURCE_DATA InitData;
   ZeroMemory(&InitData, sizeof(InitData));
   InitData.pSysMem = verticesIndices;
-  auto resultHandle = mD3dDevice->CreateBuffer(&bd, &InitData, &mVertexIndex);
+  auto resultHandle = mD3dDevice->CreateBuffer(&bufferDesc, &InitData, &mVertexIndex);
   if (FAILED(resultHandle)) {
     HandleError(L"VertexBuffer initialization failed");
     return;
@@ -517,14 +513,14 @@ auto shi62::d3d11::Core::CreateVertexIndexBuffer() -> void {
 }
 
 auto shi62::d3d11::Core::CreateRenderTargetView() -> HRESULT {
-  ID3D11Texture2D* pBackBuffer = nullptr;
-  auto resultHandle = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), ( LPVOID* )&pBackBuffer);
+  ID3D11Texture2D* backBuffer = nullptr;
+  auto resultHandle = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), ( LPVOID* )&backBuffer);
   if (FAILED(resultHandle)) {
     return resultHandle;
   }
 
-  resultHandle = mD3dDevice->CreateRenderTargetView(pBackBuffer, nullptr, &mRenderTargetView);
-  pBackBuffer->Release();
+  resultHandle = mD3dDevice->CreateRenderTargetView(backBuffer, nullptr, &mRenderTargetView);
+  backBuffer->Release();
   if (FAILED(resultHandle)) {
     return resultHandle;
   }
@@ -535,14 +531,14 @@ auto shi62::d3d11::Core::CreateRenderTargetView() -> HRESULT {
 }
 
 auto shi62::d3d11::Core::SetViewport(const UINT width, const UINT height) -> void {
-  D3D11_VIEWPORT vp;
-  vp.Width = ( FLOAT )width;
-  vp.Height = ( FLOAT )height;
-  vp.MinDepth = 0.0f;
-  vp.MaxDepth = 1.0f;
-  vp.TopLeftX = 0;
-  vp.TopLeftY = 0;
-  mImmediateContext->RSSetViewports(1, &vp);
+  D3D11_VIEWPORT viewport;
+  viewport.Width = ( FLOAT )width;
+  viewport.Height = ( FLOAT )height;
+  viewport.MinDepth = 0.0f;
+  viewport.MaxDepth = 1.0f;
+  viewport.TopLeftX = 0;
+  viewport.TopLeftY = 0;
+  mImmediateContext->RSSetViewports(1, &viewport);
 }
 
 auto shi62::d3d11::Core::DefineInputLayout(ID3DBlob* blobVS) -> HRESULT {
@@ -570,50 +566,50 @@ auto shi62::d3d11::Core::CreateBlendState() -> HRESULT {
 }
 
 auto shi62::d3d11::Core::CreateRasterizerState() -> HRESULT {
-  D3D11_RASTERIZER_DESC RSDesc;
-  RSDesc.FillMode = D3D11_FILL_SOLID;   // 普通に描画する
-  RSDesc.CullMode = D3D11_CULL_NONE;    // 両面を描画する
-  RSDesc.FrontCounterClockwise = FALSE; // 時計回りが表面
-  RSDesc.DepthBias = 0;
-  RSDesc.DepthBiasClamp = 0;
-  RSDesc.SlopeScaledDepthBias = 0;
-  RSDesc.DepthClipEnable = TRUE;
-  RSDesc.ScissorEnable = FALSE;
-  RSDesc.MultisampleEnable = FALSE;
-  RSDesc.AntialiasedLineEnable = FALSE;
-  return mD3dDevice->CreateRasterizerState(&RSDesc, &mRasterizerState);
+  D3D11_RASTERIZER_DESC rasterizerDesc;
+  rasterizerDesc.FillMode = D3D11_FILL_SOLID;   // 普通に描画する
+  rasterizerDesc.CullMode = D3D11_CULL_NONE;    // 両面を描画する
+  rasterizerDesc.FrontCounterClockwise = FALSE; // 時計回りが表面
+  rasterizerDesc.DepthBias = 0;
+  rasterizerDesc.DepthBiasClamp = 0;
+  rasterizerDesc.SlopeScaledDepthBias = 0;
+  rasterizerDesc.DepthClipEnable = TRUE;
+  rasterizerDesc.ScissorEnable = FALSE;
+  rasterizerDesc.MultisampleEnable = FALSE;
+  rasterizerDesc.AntialiasedLineEnable = FALSE;
+  return mD3dDevice->CreateRasterizerState(&rasterizerDesc, &mRasterizerState);
 }
 
 auto shi62::d3d11::Core::CreateDepthStencil() -> HRESULT {
-  D3D11_DEPTH_STENCIL_DESC DepthStencil;
-  DepthStencil.DepthEnable = TRUE;                          // 深度テストあり
-  DepthStencil.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // 書き込む
-  DepthStencil.DepthFunc = D3D11_COMPARISON_LESS;           // 手前の物体を描画
-  DepthStencil.StencilEnable = FALSE;                       // ステンシル・テストなし
-  DepthStencil.StencilReadMask = 0;                         // ステンシル読み込みマスク。
-  DepthStencil.StencilWriteMask = 0;                        // ステンシル書き込みマスク。
+  D3D11_DEPTH_STENCIL_DESC depthStencilDesc;
+  depthStencilDesc.DepthEnable = TRUE;                          // 深度テストあり
+  depthStencilDesc.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL; // 書き込む
+  depthStencilDesc.DepthFunc = D3D11_COMPARISON_LESS;           // 手前の物体を描画
+  depthStencilDesc.StencilEnable = FALSE;                       // ステンシル・テストなし
+  depthStencilDesc.StencilReadMask = 0;                         // ステンシル読み込みマスク。
+  depthStencilDesc.StencilWriteMask = 0;                        // ステンシル書き込みマスク。
   // 面が表を向いている場合のステンシル・テストの設定
-  DepthStencil.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;      // 維持
-  DepthStencil.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP; // 維持
-  DepthStencil.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;      // 維持
-  DepthStencil.FrontFace.StencilFunc = D3D11_COMPARISON_NEVER;       // 常に失敗
+  depthStencilDesc.FrontFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;      // 維持
+  depthStencilDesc.FrontFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP; // 維持
+  depthStencilDesc.FrontFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;      // 維持
+  depthStencilDesc.FrontFace.StencilFunc = D3D11_COMPARISON_NEVER;       // 常に失敗
   // 面が裏を向いている場合のステンシル・テストの設定
-  DepthStencil.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;      // 維持
-  DepthStencil.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP; // 維持
-  DepthStencil.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;      // 維持
-  DepthStencil.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;      // 常に成功
-  return mD3dDevice->CreateDepthStencilState(&DepthStencil, &mDepthStencilState);
+  depthStencilDesc.BackFace.StencilFailOp = D3D11_STENCIL_OP_KEEP;      // 維持
+  depthStencilDesc.BackFace.StencilDepthFailOp = D3D11_STENCIL_OP_KEEP; // 維持
+  depthStencilDesc.BackFace.StencilPassOp = D3D11_STENCIL_OP_KEEP;      // 維持
+  depthStencilDesc.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;      // 常に成功
+  return mD3dDevice->CreateDepthStencilState(&depthStencilDesc, &mDepthStencilState);
 }
 
 auto shi62::d3d11::Core::InitBackBuffer() -> HRESULT {
   HRESULT resultHandle;
 
   // スワップ・チェインから最初のバック・バッファを取得する
-  ID3D11Texture2D* pBackBuffer; // バッファのアクセスに使うインターフェイス
+  ID3D11Texture2D* backBuffer; // バッファのアクセスに使うインターフェイス
   resultHandle = mSwapChain->GetBuffer(
       0,                         // バック・バッファの番号
       __uuidof(ID3D11Texture2D), // バッファにアクセスするインターフェイス
-      ( LPVOID* )&pBackBuffer);  // バッファを受け取る変数
+      ( LPVOID* )&backBuffer);  // バッファを受け取る変数
   if (FAILED(resultHandle)) {
     HandleError(L"BackBuffer getting failed");
     return E_FAIL;
@@ -621,14 +617,14 @@ auto shi62::d3d11::Core::InitBackBuffer() -> HRESULT {
 
   // バック・バッファの情報
   D3D11_TEXTURE2D_DESC descBackBuffer;
-  pBackBuffer->GetDesc(&descBackBuffer);
+  backBuffer->GetDesc(&descBackBuffer);
 
   // バック・バッファの描画ターゲット・ビューを作る
   resultHandle = mD3dDevice->CreateRenderTargetView(
-      pBackBuffer,         // ビューでアクセスするリソース
+      backBuffer,         // ビューでアクセスするリソース
       nullptr,             // 描画ターゲット・ビューの定義
       &mRenderTargetView); // 描画ターゲット・ビューを受け取る変数
-  pBackBuffer->Release();
+  backBuffer->Release();
   if (FAILED(resultHandle)) {
     HandleError(L"BackBuffer targetview creation failed");
     return E_FAIL;
@@ -689,22 +685,22 @@ auto shi62::d3d11::Core::InitBackBuffer() -> HRESULT {
   mat = XMMatrixTranspose(mat);
   XMStoreFloat4x4(&mCBNeverChanges, mat);
   // 定数バッファ①のマップ取得
-  D3D11_MAPPED_SUBRESOURCE MappedResource;
+  D3D11_MAPPED_SUBRESOURCE mappedResource;
   resultHandle = mImmediateContext->Map(
-      mCBuffer[0],             // マップするリソース
+      mConstantBuffer[0],             // マップするリソース
       0,                       // サブリソースのインデックス番号
       D3D11_MAP_WRITE_DISCARD, // 書き込みアクセス
       0,                       //
-      &MappedResource);        // データの書き込み先ポインタ
+      &mappedResource);        // データの書き込み先ポインタ
   if (FAILED(resultHandle)) {
     HandleError(L"ConstantBuffer update failed");
     return E_FAIL;
   }
 
   // データ書き込み
-  CopyMemory(MappedResource.pData, &mCBNeverChanges, sizeof(XMFLOAT4X4));
+  CopyMemory(mappedResource.pData, &mCBNeverChanges, sizeof(XMFLOAT4X4));
   // マップ解除
-  mImmediateContext->Unmap(mCBuffer[0], 0);
+  mImmediateContext->Unmap(mConstantBuffer[0], 0);
 
   return S_OK;
 }
