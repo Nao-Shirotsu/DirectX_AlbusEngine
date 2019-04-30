@@ -48,8 +48,10 @@ Window::Window(HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR window
     windowClass.lpszMenuName = nullptr;
     windowClass.lpszClassName = windowClassName;
 
+    auto res = RegisterClass(&windowClass);
+
     // ウィンドウクラス登録失敗でASSERT
-    _ASSERT_EXPR(RegisterClass(&windowClass), TEXT("Class Registration Error"));
+    _ASSERT_EXPR(res, TEXT("Class Registration Error"));
 
     RECT windowRect = { 0, 0, width, height };
     AdjustWindowRect(&windowRect, WS_OVERLAPPEDWINDOW, TRUE);

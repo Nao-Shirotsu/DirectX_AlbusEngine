@@ -55,7 +55,8 @@ private:
     ID3D11Buffer* mVertexIndex;
 
     ID3D11VertexShader* mVertexShader;
-    ID3D11GeometryShader* mGeometryShader;
+    ID3D11GeometryShader* 
+        mGeometryShader;
     ID3D11PixelShader* mPixelShader;
 
     ID3D11Buffer* mCBuffer[3]; // 定数バッファ

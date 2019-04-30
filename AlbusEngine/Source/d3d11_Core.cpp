@@ -42,14 +42,14 @@ Core::Core(const HWND windowHandle)
     , mCBNeverChanges()
     , mCBChangesEveryFrame()
     , mCBChangesEveryObject()
-    , mLightPos( 3.0f, 3.0f, -3.0f )
+    , mLightPos( 3.0f, 3.0f, -2.0f )
     , mBlendState(nullptr)
     , mRasterizerState(nullptr)
     , mDepthStencilState(nullptr) {
     HRESULT resultHandle = S_OK;
 
     UINT createDeviceFlags = 0;
-#ifdef _DEBUG
+#if defined DEBUG || defined (_DEBUG)
     createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
@@ -57,6 +57,7 @@ Core::Core(const HWND windowHandle)
         D3D_DRIVER_TYPE_HARDWARE,
         D3D_DRIVER_TYPE_WARP,
         D3D_DRIVER_TYPE_REFERENCE,
+        D3D_DRIVER_TYPE_NULL
     };
     UINT numDriverTypes = ARRAYSIZE(driverTypes);
 
@@ -93,8 +94,10 @@ Core::Core(const HWND windowHandle)
         auto driverType = driverTypes[driverTypeIndex];
         resultHandle = D3D11CreateDeviceAndSwapChain(nullptr, driverType, nullptr, createDeviceFlags, featureLevels, numFeatureLevels,
                                                      D3D11_SDK_VERSION, &sd, &mSwapChain, &mD3dDevice, &mFeatureLevel, &mImmediateContext);
-        if (SUCCEEDED(resultHandle))
+        if (SUCCEEDED(resultHandle)) {
             break;
+        }
+            
     }
     if (FAILED(resultHandle)) {
         HandleError(L"Driver initialization failed");
@@ -430,6 +433,7 @@ auto Core::Update() -> void {
     // バック バッファの表示
     resultHandle = mSwapChain->Present(0,  // 画面を直ぐに更新する
                                0); // 画面を実際に更新する
+    Sleep(1);
 }
 
 auto Core::Draw() -> void const {
@@ -501,13 +505,13 @@ auto shi62::d3d11::Core::CreateVertexPosBuffer() -> void {
 
 auto shi62::d3d11::Core::CreateVertexColorBuffer() -> void {
     XMFLOAT3 verticesColor[] = {
-        XMFLOAT3(0.0f, 0.0f, 0.0f),
-        XMFLOAT3(0.0f, 0.0f, 1.0f),
-        XMFLOAT3(0.0f, 1.0f, 0.0f),
-        XMFLOAT3(0.0f, 1.0f, 1.0f),
-        XMFLOAT3(1.0f, 0.0f, 0.0f),
-        XMFLOAT3(1.0f, 0.0f, 1.0f),
-        XMFLOAT3(1.0f, 1.0f, 0.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
+        XMFLOAT3(1.0f, 1.0f, 1.0f),
         XMFLOAT3(1.0f, 1.0f, 1.0f),
     };
 
