@@ -18,16 +18,10 @@
     <ClCompile Include="Source\WinMain.cpp">
       <Filter>shi62</Filter>
     </ClCompile>
-    <ClCompile Include="Source\d3d11_Core.cpp">
-      <Filter>shi62\d3d11</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Source\winapi_Window.hpp">
       <Filter>shi62\winapi</Filter>
-    </ClInclude>
-    <ClInclude Include="Source\d3d11_Core.hpp">
-      <Filter>shi62\d3d11</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
