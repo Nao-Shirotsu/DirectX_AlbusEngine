@@ -28,6 +28,6 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Vertex_Pixel.fx" />
+    <FxCompile Include="shader.fx" />
   </ItemGroup>
 </Project>

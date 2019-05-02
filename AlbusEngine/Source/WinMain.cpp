@@ -40,7 +40,9 @@ ID3D11BlendState* g_pBlendState = NULL;               // ブレンド・ステ�
 ID3D11RasterizerState* g_pRasterizerState = NULL;     // ラスタライザ・ステート・オブジェクト
 ID3D11DepthStencilState* g_pDepthStencilState = NULL; // 深度/ステンシル・ステート・オブジェクト
 
+ID3D11Resource* g_pTexture = NULL;              // テクスチャ
 ID3D11ShaderResourceView* g_pTextureSRV = NULL;         // シェーダ リソース ビュー
+
 ID3D11SamplerState* g_pTextureSamplerWrap = NULL;       // サンプラー
 ID3D11SamplerState* g_pTextureSamplerMirror = NULL;     // サンプラー
 ID3D11SamplerState* g_pTextureSamplerClamp = NULL;      // サンプラー
@@ -84,6 +86,10 @@ struct cbCBuffer g_cbCBuffer;
 
 // InitDirect3Dで使用するため前方宣言
 HRESULT InitBackBuffer();
+
+void IndicateMessageBox(LPCWSTR errMsg) {
+  MessageBox(nullptr, errMsg, L"Error", MB_OK);
+}
 
 /*-------------------------------------------
 	Direct3D初期化
@@ -149,7 +155,7 @@ HRESULT InitDirect3D(HWND windowHandle) {
   // 頂点シェーダのコードをコンパイル
   ID3DBlob* pBlobVS = NULL;
   hr = D3DX11CompileFromFile(
-      L"..\\misc\\D3D11Sample12.sh", // ファイル名
+      L"shader.fx", // ファイル名
       NULL,                          // マクロ定義(なし)
       NULL,                          // インクルード・ファイル定義(なし)
       "VS",                          // 「VS関数」がシェーダから実行される
@@ -160,8 +166,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
       &pBlobVS,                      // コンパイルされたバイト・コード
       NULL,                          // エラーメッセージは不要
       NULL);                         // 戻り値
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"Vertex compile");
+    return hr;
+  }
 
   // 頂点シェーダの作成
   hr = g_pD3DDevice->CreateVertexShader(
@@ -170,14 +178,16 @@ HRESULT InitDirect3D(HWND windowHandle) {
       NULL,
       &g_pVertexShader); // 頂点シェーダを受け取る変数
   SAFE_RELEASE(pBlobVS); // バイト・コードを解放
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"Vertex create");
+    return hr;
+  }
 
   // **********************************************************
   // ジオメトリ・シェーダのコードをコンパイル
   ID3DBlob* pBlobGS = NULL;
   hr = D3DX11CompileFromFile(
-      L"..\\misc\\D3D11Sample12.sh", // ファイル名
+      L"shader.fx", // ファイル名
       NULL,                          // マクロ定義(なし)
       NULL,                          // インクルード・ファイル定義(なし)
       "GS",                          // 「GS関数」がシェーダから実行される
@@ -188,8 +198,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
       &pBlobGS,                      // コンパイルされたバイト・コード
       NULL,                          // エラーメッセージは不要
       NULL);                         // 戻り値
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"Geometry compile");
+    return hr;
+  }
 
   // ジオメトリ・シェーダの作成
   hr = g_pD3DDevice->CreateGeometryShader(
@@ -198,8 +210,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
       NULL,
       &g_pGeometryShader); // ジオメトリ・シェーダを受け取る変数
   SAFE_RELEASE(pBlobGS);   // バイト・コードを解放
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"Geometry create");
+    return hr;
+  }
 
   // **********************************************************
   // ピクセル・シェーダのコードをコンパイル
@@ -207,7 +221,7 @@ HRESULT InitDirect3D(HWND windowHandle) {
   for (int i = 0; i < _countof(shader_name); ++i) {
     ID3DBlob* pBlobPS = NULL;
     hr = D3DX11CompileFromFile(
-        L"..\\misc\\D3D11Sample12.sh", // ファイル名
+        L"shader.fx", // ファイル名
         NULL,                          // マクロ定義(なし)
         NULL,                          // インクルード・ファイル定義(なし)
         shader_name[i],                // 「shader_name[i]関数」がシェーダから実行される
@@ -218,8 +232,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
         &pBlobPS,                      // コンパイルされたバイト・コード
         NULL,                          // エラーメッセージは不要
         NULL);                         // 戻り値
-    if (FAILED(hr))
-      return E_FAIL;
+    if (FAILED(hr)) {
+      IndicateMessageBox(L"Pixel compile");
+      return hr;
+    }
 
     // ピクセル・シェーダの作成
     hr = g_pD3DDevice->CreatePixelShader(
@@ -228,8 +244,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
         NULL,
         &g_pPixelShader[i]); // ピクセル・シェーダを受け取る変数
     SAFE_RELEASE(pBlobPS);   // バイト・コードを解放
-    if (FAILED(hr))
-      return E_FAIL;
+    if (FAILED(hr)) {
+      IndicateMessageBox(L"Pixel create");
+      return hr;
+    }
   }
 
   // **********************************************************
@@ -244,8 +262,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
   // 定数バッファの作成
   cBufferDesc.ByteWidth = sizeof(cbCBuffer); // バッファ・サイズ
   hr = g_pD3DDevice->CreateBuffer(&cBufferDesc, NULL, &g_pCBuffer);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"CBuffer create");
+    return hr;
+  }
 
   // **********************************************************
   // ブレンド・ステート・オブジェクトの作成
@@ -256,8 +276,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
   BlendState.RenderTarget[0].BlendEnable = FALSE;
   BlendState.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
   hr = g_pD3DDevice->CreateBlendState(&BlendState, &g_pBlendState);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"BlendState create");
+    return hr;
+  }
 
   // ラスタライザ・ステート・オブジェクトの作成
   D3D11_RASTERIZER_DESC RSDesc;
@@ -272,8 +294,10 @@ HRESULT InitDirect3D(HWND windowHandle) {
   RSDesc.MultisampleEnable = FALSE;
   RSDesc.AntialiasedLineEnable = FALSE;
   hr = g_pD3DDevice->CreateRasterizerState(&RSDesc, &g_pRasterizerState);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"RasterizerState create");
+    return hr;
+  }
 
   // **********************************************************
   // 深度/ステンシル・ステート・オブジェクトの作成
@@ -296,14 +320,57 @@ HRESULT InitDirect3D(HWND windowHandle) {
   DepthStencil.BackFace.StencilFunc = D3D11_COMPARISON_ALWAYS;      // 常に成功
   hr = g_pD3DDevice->CreateDepthStencilState(&DepthStencil,
                                              &g_pDepthStencilState);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"StencilState create");
+    return hr;
+  };
 
   // **********************************************************
+  // 作成するテクスチャの設定
+  D3DX11_IMAGE_LOAD_INFO imageLoadInfo;
+  imageLoadInfo.Width = 256;                            // テクスチャの幅
+  imageLoadInfo.Height = 256;                           // テクスチャの高さ
+  imageLoadInfo.Depth = 0;                              // テクスチャの深さ
+  imageLoadInfo.FirstMipLevel = 0;                      // 読み込む最初のミップマップ レベル
+  imageLoadInfo.MipLevels = 8;                          // ミップマップ レベルの数
+  imageLoadInfo.Usage = D3D11_USAGE_DEFAULT;            // デフォルト使用法
+  imageLoadInfo.BindFlags = D3D11_BIND_SHADER_RESOURCE; // シェーダ リソース
+  imageLoadInfo.CpuAccessFlags = 0;                     // CPUからアクセスしない
+  imageLoadInfo.MiscFlags = 0;                          // オプション(特になし)
+  imageLoadInfo.Format = DXGI_FORMAT_R8G8B8A8_UNORM;    // フォーマット
+  imageLoadInfo.Filter = D3DX11_FILTER_LINEAR;          // 線形フィルタ
+  imageLoadInfo.MipFilter = D3DX11_FILTER_LINEAR;       // 線形フィルタ
+  imageLoadInfo.pSrcInfo = NULL;
+
+  // テクスチャの読み込み
+  D3DX11CreateTextureFromFile(
+      g_pD3DDevice,              // リソースを作成するデバイス
+      L"cbfront.png", // 画像ファイル名
+      &imageLoadInfo,            // 作成するテクスチャの設定
+      NULL,                      // 非同期で実行しない
+      &g_pTexture,               // テクスチャを取得する変数
+      &hr);                      // 戻り値
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"Texture load");
+    return hr;
+  };
+
+  // 2Dテクスチャにアクセスするシェーダ リソース ビューの設定
+  D3D11_SHADER_RESOURCE_VIEW_DESC srDesc;
+  srDesc.Format = imageLoadInfo.Format;               // フォーマット
+  srDesc.ViewDimension = D3D_SRV_DIMENSION_TEXTURE2D; // 2Dテクスチャ
+  srDesc.Texture2D.MostDetailedMip = 0;               // 最初のミップマップ レベル
+  srDesc.Texture2D.MipLevels = -1;                    // すべてのミップマップ レベル
+
   // シェーダ リソース ビューの作成
-  D3DX11CreateShaderResourceViewFromFile(g_pD3DDevice, L"..\\misc\\mipmap.dds", NULL, NULL, &g_pTextureSRV, &hr);
-  if (FAILED(hr))
-    return E_FAIL;
+  hr = g_pD3DDevice->CreateShaderResourceView(
+      g_pTexture,      // アクセスするテクスチャ リソース
+      &srDesc,         // シェーダ リソース ビューの設定
+      &g_pTextureSRV); // 受け取る変数
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"ShaderResourceView create");
+    return hr;
+  }
 
   // サンプラーの作成
   D3D11_SAMPLER_DESC descSampler;
@@ -321,23 +388,31 @@ HRESULT InitDirect3D(HWND windowHandle) {
   descSampler.MinLOD = -FLT_MAX;
   descSampler.MaxLOD = FLT_MAX;
   hr = g_pD3DDevice->CreateSamplerState(&descSampler, &g_pTextureSamplerWrap);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"SamplerState create");
+    return hr;
+  }
   descSampler.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR;
   descSampler.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR;
   hr = g_pD3DDevice->CreateSamplerState(&descSampler, &g_pTextureSamplerMirror);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"SamplerState create");
+    return hr;
+  }
   descSampler.AddressU = D3D11_TEXTURE_ADDRESS_CLAMP;
   descSampler.AddressV = D3D11_TEXTURE_ADDRESS_CLAMP;
   hr = g_pD3DDevice->CreateSamplerState(&descSampler, &g_pTextureSamplerClamp);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"SamplerState create");
+    return hr;
+  }
   descSampler.AddressU = D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
   descSampler.AddressV = D3D11_TEXTURE_ADDRESS_MIRROR_ONCE;
   hr = g_pD3DDevice->CreateSamplerState(&descSampler, &g_pTextureSamplerMirrorOnce);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"SamplerState create");
+    return hr;
+  }
   descSampler.AddressU = D3D11_TEXTURE_ADDRESS_BORDER;
   descSampler.AddressV = D3D11_TEXTURE_ADDRESS_BORDER;
   descSampler.BorderColor[0] = 1.0f;
@@ -345,14 +420,18 @@ HRESULT InitDirect3D(HWND windowHandle) {
   descSampler.BorderColor[2] = 0.0f;
   descSampler.BorderColor[3] = 1.0f;
   hr = g_pD3DDevice->CreateSamplerState(&descSampler, &g_pTextureSamplerBorder);
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"SamplerState create");
+    return hr;
+  }
 
   // **********************************************************
   // バック バッファの初期化
   hr = InitBackBuffer();
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"BackBuffer init");
+    return hr;
+  }
 
   return hr;
 }
@@ -369,8 +448,10 @@ HRESULT InitBackBuffer(void) {
       0,                         // バック・バッファの番号
       __uuidof(ID3D11Texture2D), // バッファにアクセスするインターフェイス
       ( LPVOID* )&pBackBuffer);  // バッファを受け取る変数
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"BackBuffer get");
+    return hr;
+  }
 
   // バック・バッファの情報
   D3D11_TEXTURE2D_DESC descBackBuffer;
@@ -382,8 +463,10 @@ HRESULT InitBackBuffer(void) {
       NULL,                  // 描画ターゲット・ビューの定義
       &g_pRenderTargetView); // 描画ターゲット・ビューを受け取る変数
   SAFE_RELEASE(pBackBuffer); // 以降、バック・バッファは直接使わないので解放
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"RenderTargetView create");
+    return hr;
+  }
 
   // 深度/ステンシル・テクスチャの作成
   D3D11_TEXTURE2D_DESC descDepth = descBackBuffer;
@@ -402,8 +485,10 @@ HRESULT InitBackBuffer(void) {
       &descDepth,        // 作成する2Dテクスチャの設定
       NULL,              //
       &g_pDepthStencil); // 作成したテクスチャを受け取る変数
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"DepthStencilTexture create");
+    return hr;
+  }
 
   // 深度/ステンシル ビューの作成
   D3D11_DEPTH_STENCIL_VIEW_DESC descDSV;
@@ -415,8 +500,10 @@ HRESULT InitBackBuffer(void) {
       g_pDepthStencil,       // 深度/ステンシル・ビューを作るテクスチャ
       &descDSV,              // 深度/ステンシル・ビューの設定
       &g_pDepthStencilView); // 作成したビューを受け取る変数
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"DepthStencilView create");
+    return hr;
+  }
 
   // ビューポートの設定
   g_ViewPort[0].TopLeftX = 0.0f;                         // ビューポート領域の左上X座標。
@@ -474,9 +561,7 @@ HRESULT Render(void) {
   XMMATRIX matY, matX;
   FLOAT rotate = (FLOAT)(XM_PI * (timeGetTime() % 3000)) / 1500.0f;
   matY = XMMatrixRotationY(rotate);
-  rotate = (FLOAT)(XM_PI * (timeGetTime() % 1500)) / 750.0f;
-  matX = XMMatrixRotationX(rotate);
-  XMStoreFloat4x4(&g_cbCBuffer.World, XMMatrixTranspose(matY * matX));
+  XMStoreFloat4x4(&g_cbCBuffer.World, matY);
   // 定数バッファのマップ取得
   D3D11_MAPPED_SUBRESOURCE MappedResource;
   hr = g_pImmediateContext->Map(
@@ -485,8 +570,10 @@ HRESULT Render(void) {
       D3D11_MAP_WRITE_DISCARD, // 書き込みアクセス
       0,                       //
       &MappedResource);        // データの書き込み先ポインタ
-  if (FAILED(hr))
-    return E_FAIL;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"CBuffer update");
+    return hr;
+  }
   // データ書き込み
   CopyMemory(MappedResource.pData, &g_cbCBuffer, sizeof(cbCBuffer));
   // マップ解除
@@ -497,7 +584,7 @@ HRESULT Render(void) {
   // IAに入力レイアウト・オブジェクトを設定(頂点バッファなし)
   g_pImmediateContext->IASetInputLayout(NULL);
   // IAにプリミティブの種類を設定
-  g_pImmediateContext->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  g_pImmediateContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
   // VSに頂点シェーダを設定
   g_pImmediateContext->VSSetShader(g_pVertexShader, NULL, 0);
@@ -523,23 +610,12 @@ HRESULT Render(void) {
       0,               // 設定する最初のスロット番号
       1,               // 設定するシェーダ・リソース・ビューの数
       &g_pTextureSRV); // 設定するシェーダ・リソース・ビューの配列
-  // PSにサンプラーを設定
-  switch (g_numPixelShader) {
-  case 1:
-    g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerWrap);
-    break;
-  case 2:
-    g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerMirror);
-    break;
-  case 3:
-    g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerClamp);
-    break;
-  case 4:
-    g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerMirrorOnce);
-    break;
-  case 5:
-    g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerBorder);
-  }
+                       // PSにサンプラーを設定
+  //g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerWrap);
+  //g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerMirror);
+  g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerClamp);
+  //g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerMirrorOnce);
+  //g_pImmediateContext->PSSetSamplers(0, 1, &g_pTextureSamplerBorder);
 
   // OMに描画ターゲット ビューと深度/ステンシル・ビューを設定
   g_pImmediateContext->OMSetRenderTargets(1, &g_pRenderTargetView, g_bDepthMode ? g_pDepthStencilView : NULL);
@@ -559,7 +635,7 @@ HRESULT Render(void) {
   // バック バッファの表示
   hr = g_pSwapChain->Present(0,  // 画面を直ぐに更新する
                              0); // 画面を実際に更新する
-
+  Sleep(5);
   return hr;
 }
 
@@ -623,8 +699,10 @@ HRESULT IsDeviceRemoved(HWND windowHandle) {
     return E_FAIL;
     CleanupDirect3D();   // Direct3Dの解放(アプリケーション定義)
     hr = InitDirect3D(windowHandle); // Direct3Dの初期化(アプリケーション定義)
-    if (FAILED(hr))
-      return hr; // 失敗。アプリケーションを終了
+    if (FAILED(hr)) {
+      IndicateMessageBox(L"Device reinit");
+      return hr;
+    }
     break;
 
   case DXGI_ERROR_DEVICE_REMOVED:
@@ -648,8 +726,10 @@ bool AppIdle(HWND windowHandle) {
   HRESULT hr;
   // デバイスの消失処理
   hr = IsDeviceRemoved(windowHandle);
-  if (FAILED(hr))
-    return false;
+  if (FAILED(hr)) {
+    IndicateMessageBox(L"Device critical error");
+    return hr;
+  }
 
   // スタンバイ モード
   if (g_bStandbyMode) {
