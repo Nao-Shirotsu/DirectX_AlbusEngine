@@ -21,31 +21,31 @@ auto CompileShaderFromFile(const WCHAR* szFileName, LPCSTR szEntryPoint, LPCSTR 
 }
 
 Core::Core(const HWND windowHandle)
-    : terminationRequested(false)
-    , mWindowHandle(windowHandle)
-    , mFeatureLevel()
-    , mD3dDevice(nullptr)
-    , mImmediateContext(nullptr)
-    , mSwapChain(nullptr)
-    , mRenderTargetView(nullptr)
-    , mViewport()
-    , mDepthStencilBuffer(nullptr)
-    , mDepthStencilView(nullptr)
-    , mVertexLayout(nullptr)
-    , mVertexPos(nullptr)
-    , mVertexColor(nullptr)
-    , mVertexIndex(nullptr)
-    , mVertexShader(nullptr)
-    , mGeometryShader(nullptr)
-    , mPixelShader(nullptr)
-    , mCBuffer{ nullptr, nullptr, nullptr }
-    , mCBNeverChanges()
-    , mCBChangesEveryFrame()
-    , mCBChangesEveryObject()
-    , mLightPos(3.0f, 3.0f, -2.0f)
-    , mBlendState(nullptr)
-    , mRasterizerState(nullptr)
-    , mDepthStencilState(nullptr) {
+  : terminationRequested(false)
+  , mWindowHandle(windowHandle)
+  , mFeatureLevel()
+  , mD3dDevice(nullptr)
+  , mImmediateContext(nullptr)
+  , mSwapChain(nullptr)
+  , mRenderTargetView(nullptr)
+  , mViewport()
+  , mDepthStencilBuffer(nullptr)
+  , mDepthStencilView(nullptr)
+  , mVertexLayout(nullptr)
+  , mVertexPos(nullptr)
+  , mVertexColor(nullptr)
+  , mVertexIndex(nullptr)
+  , mVertexShader(nullptr)
+  , mGeometryShader(nullptr)
+  , mPixelShader(nullptr)
+  , mCBuffer{ nullptr, nullptr, nullptr }
+  , mCBNeverChanges()
+  , mCBChangesEveryFrame()
+  , mCBChangesEveryObject()
+  , mLightPos(3.0f, 3.0f, -2.0f)
+  , mBlendState(nullptr)
+  , mRasterizerState(nullptr)
+  , mDepthStencilState(nullptr) {
   RECT rect;
   GetClientRect(mWindowHandle, &rect);
   UINT width = rect.right - rect.left;
@@ -518,7 +518,7 @@ auto shi62::d3d11::Core::CreateVertexIndexBuffer() -> void {
 
 auto shi62::d3d11::Core::CreateRenderTargetView() -> HRESULT {
   ID3D11Texture2D* pBackBuffer = nullptr;
-  auto resultHandle = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), ( LPVOID* )&pBackBuffer);
+  auto resultHandle = mSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), (LPVOID*)&pBackBuffer);
   if (FAILED(resultHandle)) {
     return resultHandle;
   }
@@ -536,8 +536,8 @@ auto shi62::d3d11::Core::CreateRenderTargetView() -> HRESULT {
 
 auto shi62::d3d11::Core::SetViewport(const UINT width, const UINT height) -> void {
   D3D11_VIEWPORT vp;
-  vp.Width = ( FLOAT )width;
-  vp.Height = ( FLOAT )height;
+  vp.Width = (FLOAT)width;
+  vp.Height = (FLOAT)height;
   vp.MinDepth = 0.0f;
   vp.MaxDepth = 1.0f;
   vp.TopLeftX = 0;
@@ -613,7 +613,7 @@ auto shi62::d3d11::Core::InitBackBuffer() -> HRESULT {
   resultHandle = mSwapChain->GetBuffer(
       0,                         // バック・バッファの番号
       __uuidof(ID3D11Texture2D), // バッファにアクセスするインターフェイス
-      ( LPVOID* )&pBackBuffer);  // バッファを受け取る変数
+      (LPVOID*)&pBackBuffer);    // バッファを受け取る変数
   if (FAILED(resultHandle)) {
     HandleError(L"BackBuffer getting failed");
     return E_FAIL;
@@ -672,20 +672,20 @@ auto shi62::d3d11::Core::InitBackBuffer() -> HRESULT {
   }
 
   // ビューポートの設定
-  mViewport.TopLeftX = 0.0f;                         // ビューポート領域の左上X座標。
-  mViewport.TopLeftY = 0.0f;                         // ビューポート領域の左上Y座標。
-  mViewport.Width = ( FLOAT )descBackBuffer.Width;   // ビューポート領域の幅
-  mViewport.Height = ( FLOAT )descBackBuffer.Height; // ビューポート領域の高さ
-  mViewport.MinDepth = 0.0f;                         // ビューポート領域の深度値の最小値
-  mViewport.MaxDepth = 1.0f;                         // ビューポート領域の深度値の最大値
+  mViewport.TopLeftX = 0.0f;                       // ビューポート領域の左上X座標。
+  mViewport.TopLeftY = 0.0f;                       // ビューポート領域の左上Y座標。
+  mViewport.Width = (FLOAT)descBackBuffer.Width;   // ビューポート領域の幅
+  mViewport.Height = (FLOAT)descBackBuffer.Height; // ビューポート領域の高さ
+  mViewport.MinDepth = 0.0f;                       // ビューポート領域の深度値の最小値
+  mViewport.MaxDepth = 1.0f;                       // ビューポート領域の深度値の最大値
 
   // 定数バッファ①を更新
   // 射影変換行列(パースペクティブ(透視法)射影)
   XMMATRIX mat = XMMatrixPerspectiveFovLH(
-      XMConvertToRadians(30.0f),                                      // 視野角30°
-      ( float )descBackBuffer.Width / ( float )descBackBuffer.Height, // アスペクト比
-      1.0f,                                                           // 前方投影面までの距離
-      20.0f);                                                         // 後方投影面までの距離
+      XMConvertToRadians(30.0f),                                  // 視野角30°
+      (float)descBackBuffer.Width / (float)descBackBuffer.Height, // アスペクト比
+      1.0f,                                                       // 前方投影面までの距離
+      20.0f);                                                     // 後方投影面までの距離
   mat = XMMatrixTranspose(mat);
   XMStoreFloat4x4(&mCBNeverChanges, mat);
   // 定数バッファ①のマップ取得

@@ -6,11 +6,11 @@
 namespace shi62::winapi {
 
 Window::Window(HINSTANCE instanceHandle, LPCWSTR windowClassName, LPCWSTR windowTitle, const int width, const int height)
-    : mInstanceHandle(instanceHandle)
-    , mWindowClassName(windowClassName)
-    , mWindowTitle(windowTitle)
-    , mMessage({ 0 })
-    , mMessageState(TRUE) {
+  : mInstanceHandle(instanceHandle)
+  , mWindowClassName(windowClassName)
+  , mWindowTitle(windowTitle)
+  , mMessage({ 0 })
+  , mMessageState(TRUE) {
   WNDCLASS windowClass;
   windowClass.style = CS_HREDRAW | CS_VREDRAW;
   windowClass.lpfnWndProc = [](HWND windowHandle,
