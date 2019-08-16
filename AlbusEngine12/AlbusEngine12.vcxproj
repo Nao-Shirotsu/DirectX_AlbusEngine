@@ -157,23 +157,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="AlbusEngine12.h" />
-    <ClInclude Include="framework.h" />
-    <ClInclude Include="Resource.h" />
-    <ClInclude Include="targetver.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="AlbusEngine12.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="AlbusEngine12.rc" />
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="AlbusEngine12.ico" />
-    <Image Include="small.ico" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include=".clang-format" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\WinMain.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
