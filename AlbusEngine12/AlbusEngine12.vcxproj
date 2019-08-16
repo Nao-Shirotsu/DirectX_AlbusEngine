@@ -160,7 +160,11 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\winapi_Window.cpp" />
     <ClCompile Include="src\WinMain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\winapi_Window.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -9,8 +9,16 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\winapi_Window.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="src\WinMain.cpp">
       <Filter>src</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\winapi_Window.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
