@@ -26,5 +26,8 @@
     <ClInclude Include="src\d3d12_Core.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\Constants.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

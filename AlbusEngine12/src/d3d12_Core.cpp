@@ -1,14 +1,20 @@
-
-
 #include "d3d12_Core.hpp"
+#include "Constants.hpp"
 
 //ライブラリ読み込み
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
 
+namespace {
+
+constexpr auto FRAME_COUNT = 3; //画面バッファ数
+
+} // anonymous namespace
+
 namespace shi62::d3d12 {
 
-Core::Core(HWND windowHandle) {
+Core::Core(HWND windowHandle)
+    : mRenderTargets{ FRAME_COUNT } {
   //D3D12デバイスの作成
   D3D12CreateDevice(0, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
 
@@ -20,7 +26,7 @@ Core::Core(HWND windowHandle) {
 
   //コマンドリストの作成
   mDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mCommandAllocator));
-  mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator, NULL, IID_PPV_ARGS(&mCommandList));
+  mDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mCommandAllocator.Get(), NULL, IID_PPV_ARGS(&mCommandList));
   mCommandList->Close();
 
   //スワップチェーンの作成
@@ -34,7 +40,7 @@ Core::Core(HWND windowHandle) {
   swapChainDesc.SampleDesc.Count = 1;
   IDXGIFactory4* factory;
   CreateDXGIFactory1(IID_PPV_ARGS(&factory));
-  factory->CreateSwapChainForHwnd(mCommandQueue, windowHandle, &swapChainDesc, NULL, NULL, ( IDXGISwapChain1** )&mSwapChain);
+  factory->CreateSwapChainForHwnd(mCommandQueue.Get(), windowHandle, &swapChainDesc, NULL, NULL, (IDXGISwapChain1**)(mSwapChain.GetAddressOf()));
   mFrameIndex = mSwapChain->GetCurrentBackBufferIndex();
 
   //ディスクリプターヒープの作成（レンダーターゲットビュー用）
@@ -49,7 +55,7 @@ Core::Core(HWND windowHandle) {
   CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart());
   for (UINT n = 0; n < FRAME_COUNT; n++) {
     mSwapChain->GetBuffer(n, IID_PPV_ARGS(&mRenderTargets[n]));
-    mDevice->CreateRenderTargetView(mRenderTargets[n], NULL, rtvHandle);
+    mDevice->CreateRenderTargetView(mRenderTargets[n].Get(), NULL, rtvHandle);
     rtvHandle.Offset(1, mRtvDescriptorSize);
   }
 
@@ -63,7 +69,7 @@ Core::Core(HWND windowHandle) {
 
   //パイプラインステートオブジェクトの作成
   D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-  psoDesc.pRootSignature = mRootSignature;
+  psoDesc.pRootSignature = mRootSignature.Get();
   psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
   psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
   psoDesc.DepthStencilState.DepthEnable = FALSE;
@@ -86,19 +92,19 @@ void Core::Render() {
 
   // ------ここからコマンドリストにコマンドを書き込んでいく------
   //コマンドリストをリセットする
-  mCommandList->Reset(mCommandAllocator, mPipelineState);
+  mCommandList->Reset(mCommandAllocator.Get(), mPipelineState.Get());
 
   //ルートシグネチャをセット
-  mCommandList->SetGraphicsRootSignature(mRootSignature);
+  mCommandList->SetGraphicsRootSignature(mRootSignature.Get());
 
   //ビューポートをセット
-  mViewport = CD3DX12_VIEWPORT(0.0f, 0.0f, ( float )WINDOW_WIDTH, ( float )WINDOW_HEIGHT);
+  mViewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(WINDOW_WIDTH), static_cast<float>(WINDOW_HEIGHT));
   mScissorRect = CD3DX12_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
   mCommandList->RSSetViewports(1, &mViewport);
   mCommandList->RSSetScissorRects(1, &mScissorRect);
 
   //バックバッファをレンダーターゲットとして使用することを伝える
-  mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mFrameIndex], D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
+  mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mFrameIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
   CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart(), mFrameIndex, mRtvDescriptorSize);
   mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, NULL);
 
@@ -107,13 +113,13 @@ void Core::Render() {
   mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, NULL);
 
   //バックバッファがこのあとPresentされることを伝える
-  mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mFrameIndex], D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
+  mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mFrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
 
   //コマンドの書き込みはここで終わり、Closeする
   mCommandList->Close();
 
   //コマンドリストの実行
-  ID3D12CommandList* ppCommandLists[] = { mCommandList };
+  ID3D12CommandList* ppCommandLists[] = { mCommandList.Get() };
   mCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
   //バックバッファをフロントに持ってきて画面に表示
@@ -124,7 +130,7 @@ void Core::Render() {
 
   // -------同期処理-------
   //GPUサイドが上のExecuteCommandListsで指示した仕事を”全て完了”したときにGPUサイドから発信するシグナル値をセット
-  mCommandQueue->Signal(mFence, mFenceValue);
+  mCommandQueue->Signal(mFence.Get(), mFenceValue);
 
   //上でセットしたシグナルがGPUから帰ってくるまでストール（この行で待機）
   while (mFence->GetCompletedValue() < mFenceValue)

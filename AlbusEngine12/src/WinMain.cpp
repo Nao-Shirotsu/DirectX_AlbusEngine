@@ -1,6 +1,7 @@
 ﻿//ヘッダー読み込み
 #include "d3d12_Core.hpp"
 #include "winapi_Window.hpp"
+#include "Constants.hpp"
 
 INT WINAPI WinMain(_In_ HINSTANCE hInst,
                    _In_opt_ HINSTANCE hPrevInst,
