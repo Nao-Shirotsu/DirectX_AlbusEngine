@@ -29,7 +29,4 @@ private:
   BOOL mMessageState; // メッセージ受信時に終了/エラーを検出する変数
 };
 
-// キーボードのいずれかのキー押下時のメッセージ処理関数
-void ProcessKeydownMessage(HWND windowHandle, WPARAM wParam);
-
 } // namespace shi62:winapi
