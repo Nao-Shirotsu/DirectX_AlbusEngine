@@ -1,5 +1,5 @@
 ﻿#pragma once
-#pragma once
+
 #include <windows.h>
 
 namespace shi62::winapi {
