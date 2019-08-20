@@ -1,13 +1,18 @@
+#include <D3Dcompiler.h>
+
 #include "d3d12_Core.hpp"
 #include "Constants.hpp"
+#include "d3d12_Vertex3d.hpp"
 
 //ライブラリ読み込み
 #pragma comment(lib, "d3d12.lib")
 #pragma comment(lib, "dxgi.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 namespace {
 
 constexpr auto FRAME_COUNT = 3; //画面バッファ数
+constexpr float SCREEN_CLEAR_COLOR[] = { 0.75f, 0.75f, 0.75f, 1.0f };
 
 } // anonymous namespace
 
@@ -67,9 +72,23 @@ Core::Core(HWND windowHandle)
   D3D12SerializeRootSignature(&rootSignatureDesc, D3D_ROOT_SIGNATURE_VERSION_1, &signature, &error);
   mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
 
+  //シェーダーの作成
+  ID3DBlob* vertexShader;
+  ID3DBlob* pixelShader;
+  D3DCompileFromFile(L"shader/Simple.hlsl", NULL, NULL, "VS", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &vertexShader, nullptr);
+  D3DCompileFromFile(L"shader/Simple.hlsl", NULL, NULL, "PS", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &pixelShader, nullptr);
+  
+  //頂点レイアウトの作成
+  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+  };
+
   //パイプラインステートオブジェクトの作成
   D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+  psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
   psoDesc.pRootSignature = mRootSignature.Get();
+  psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader);
+  psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader);
   psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
   psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
   psoDesc.DepthStencilState.DepthEnable = FALSE;
@@ -80,6 +99,35 @@ Core::Core(HWND windowHandle)
   psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
   psoDesc.SampleDesc.Count = 1;
   mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
+
+  // 頂点
+  Vertex3d triangleVertices[] = {
+    { { 0.0f, 0.5f, 0.0f } },
+    { { 0.5f, -0.5f, 0.0f } },
+    { { -0.5f, -0.5f, 0.0f } }
+  };
+
+  //バーテックスバッファ
+  const UINT vertexBufferSize = sizeof(triangleVertices);
+  mDevice->CreateCommittedResource(
+      &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+      D3D12_HEAP_FLAG_NONE,
+      &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+      D3D12_RESOURCE_STATE_GENERIC_READ,
+      nullptr,
+      IID_PPV_ARGS(&mVertexBuffer));
+
+  //バーテックスバッファに頂点データを詰め込む
+  UINT8* pVertexDataBegin;
+  CD3DX12_RANGE readRange(0, 0);
+  mVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
+  memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+  mVertexBuffer->Unmap(0, NULL);
+
+  //バーテックスバッファビューを初期化
+  mVertexBufferView.BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
+  mVertexBufferView.StrideInBytes = sizeof(Vertex3d);
+  mVertexBufferView.SizeInBytes = vertexBufferSize;
 
   //フェンスを作成
   mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
@@ -109,8 +157,16 @@ void Core::Render() {
   mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, NULL);
 
   //画面クリア
-  const float clearColor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
-  mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, NULL);
+  mCommandList->ClearRenderTargetView(rtvHandle, SCREEN_CLEAR_COLOR, 0, NULL);
+
+  //ポリゴントポロジーの指定
+  mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+  //バーテックスバッファをセット
+  mCommandList->IASetVertexBuffers(0, 1, &mVertexBufferView);
+
+  //描画（実際にここで描画されるわけではない。コマンドを記録するだけ）
+  mCommandList->DrawInstanced(3, 1, 0, 0);
 
   //バックバッファがこのあとPresentされることを伝える
   mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mFrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -133,8 +189,7 @@ void Core::Render() {
   mCommandQueue->Signal(mFence.Get(), mFenceValue);
 
   //上でセットしたシグナルがGPUから帰ってくるまでストール（この行で待機）
-  while (mFence->GetCompletedValue() < mFenceValue)
-    ;
+  while (mFence->GetCompletedValue() < mFenceValue);
 
   //App側では唯一ここでフェンス値を更新する
   mFenceValue++;
