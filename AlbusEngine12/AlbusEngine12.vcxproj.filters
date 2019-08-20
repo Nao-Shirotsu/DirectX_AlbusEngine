@@ -15,9 +15,18 @@
     <ClCompile Include="src\WinMain.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\d3d12_Core.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\winapi_Window.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\d3d12_Core.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Constants.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
