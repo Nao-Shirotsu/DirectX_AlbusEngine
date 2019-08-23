@@ -21,6 +21,7 @@
     <ClCompile Include="src\d3d12_Core.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\d3d12_CBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\winapi_Window.hpp">
@@ -35,6 +36,7 @@
     <ClInclude Include="src\d3d12_Vertex3d.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\d3d12_CBuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\Simple.hlsl">

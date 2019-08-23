@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -160,11 +160,13 @@
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\d3d12_CBuffer.cpp" />
     <ClCompile Include="src\d3d12_Core.cpp" />
     <ClCompile Include="src\winapi_Window.cpp" />
     <ClCompile Include="src\WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\d3d12_CBuffer.hpp" />
     <ClInclude Include="src\d3d12_Core.hpp" />
     <ClInclude Include="src\Constants.hpp" />
     <ClInclude Include="src\d3d12_Vertex3d.hpp" />

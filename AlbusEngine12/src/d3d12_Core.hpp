@@ -10,7 +10,7 @@ namespace shi62::d3d12 {
 
 class Core {
 public:
-  Core(HWND windowHandle);
+  Core(const HWND windowHandle);
 
   void Render();
 
@@ -36,6 +36,9 @@ private:
   CD3DX12_RECT mScissorRect;
   ComPtr<ID3D12Resource> mVertexBuffer;
   D3D12_VERTEX_BUFFER_VIEW mVertexBufferView;
+  ComPtr<ID3D12Resource> mConstantBuffer;
+  UINT8* mCbvDataBegin;
+  ComPtr<ID3D12DescriptorHeap> mCbvHeap;
 };
 
 } // namespace shi62::d3d12
