@@ -6,7 +6,7 @@
 #include <dxgi1_4.h>
 #include <wrl.h>
 
-#include "d3d12_Vector3f.hpp"
+#include "d3d12_Polygon.hpp"
 #include "d3d12_Camera.hpp"
 #include "d3d12_CBuffer.hpp"
 
@@ -49,8 +49,8 @@ private:
   UINT8* mCbvDataBegin;
   ComPtr<ID3D12DescriptorHeap> mCbvHeap;
 
-  std::vector<DirectX::XMFLOAT3> mPolygonVerticesVec;
-  std::vector<CBuffer> mCBufferForPolygons;
+  std::vector<Polygon> mPolygons;
+  std::vector<CBuffer> mCBuffers;
   void InitPolygons();
 };
 

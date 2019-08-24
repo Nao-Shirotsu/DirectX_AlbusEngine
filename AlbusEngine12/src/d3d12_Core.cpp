@@ -5,7 +5,7 @@
 #include "Constants.hpp"
 #include "d3d12_CBuffer.hpp"
 #include "d3d12_Core.hpp"
-#include "d3d12_Vector3f.hpp"
+#include "d3d12_Polygon.hpp"
 
 //ライブラリ読み込み
 #pragma comment(lib, "d3d12.lib")
@@ -27,14 +27,11 @@ void MYASSERT(HRESULT res, LPCWSTR errmsg) {
 }
 
 void Core::InitPolygons() {
-  constexpr Vector3f vertex = {
-    { -0.75f, 0.5f, 0.0f },
-  };
   int i = 0;
-  for (auto& polygon : mPolygonVerticesVec) {
-    polygon.x = vertex.mData.x + 0.25 * i;
-    polygon.y = vertex.mData.y;
-    polygon.z = vertex.mData.z;   
+  for (auto& polygon : mPolygons) {
+    polygon[0] = { 0.0f + 1.0f * i, 0.5f, 0.0f };
+    polygon[1] = { 0.5f + 1.0f * i, -0.5f, 0.0f };
+    polygon[2] = { -0.5f + 1.0f * i, -0.5f, 0.0f };
     ++i;
   }
 }
@@ -43,13 +40,9 @@ Core::Core(const HWND windowHandle)
     : mTermination{ false }
     , mRenderTargets{ FRAME_COUNT }
     , mCbvDataBegin{ nullptr }
-    , mPolygonVerticesVec{ NUM_POLYGONS }
-    , mCBufferForPolygons{ NUM_POLYGONS } {
+    , mPolygons{ NUM_POLYGONS }
+    , mCBuffers{ NUM_POLYGONS } {
   HRESULT res;
-
-  // ポリゴン位置初期化
-  InitPolygons();
-
 
   //D3D12デバイスの作成
   res = D3D12CreateDevice(0, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS(&mDevice));
@@ -118,8 +111,8 @@ Core::Core(const HWND windowHandle)
   MYASSERT(res, L"RootSign");
   res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
   MYASSERT(res, L"CreateRootSign");
-  //シェーダーの作成
 
+  //シェーダーの作成
   ID3DBlob* vertexShader;
   ID3DBlob* pixelShader;
   res = D3DCompileFromFile(L"shader/Simple.hlsl", nullptr, nullptr, "VS", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &vertexShader, nullptr);
@@ -152,18 +145,13 @@ Core::Core(const HWND windowHandle)
 
   //バーテックスバッファの作成
   //頂点
-  constexpr Vector3f triangleVertices[] = {
-    { { -0.5f, 0.5f, 0.0f } },
-    { { 0.0f, -0.5f, 0.0f } },
-    { { -1.0f, -0.5f, 0.0f } }
-  };
-
+  InitPolygons();
+  
   //バーテックスバッファ
-  const UINT vertexBufferSize = sizeof(triangleVertices);
   res = mDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
       D3D12_HEAP_FLAG_NONE,
-      &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
+      &CD3DX12_RESOURCE_DESC::Buffer(sizeof(Polygon)),
       D3D12_RESOURCE_STATE_GENERIC_READ,
       nullptr,
       IID_PPV_ARGS(&mVertexBuffer));
@@ -174,13 +162,13 @@ Core::Core(const HWND windowHandle)
   CD3DX12_RANGE readRange(0, 0);
   res = mVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
   MYASSERT(res, L"Map VBuff");
-  memcpy(pVertexDataBegin, triangleVertices, sizeof(triangleVertices));
+  memcpy(pVertexDataBegin, &mPolygons[0], sizeof(Polygon));
   mVertexBuffer->Unmap(0, nullptr);
 
   //バーテックスバッファビューを初期化
   mVertexBufferView.BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
   mVertexBufferView.StrideInBytes = sizeof(Vector3f);
-  mVertexBufferView.SizeInBytes = vertexBufferSize;
+  mVertexBufferView.SizeInBytes = sizeof(Polygon);
 
   //フェンスを作成
   res = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
@@ -189,6 +177,7 @@ Core::Core(const HWND windowHandle)
 
   //コンスタントバッファの作成
   UINT64 CBSize = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT;
+
   //CBV（コンスタントバッファビュー）用のディスクリプターヒープ
   D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
   cbvHeapDesc.NumDescriptors = NUM_POLYGONS;
@@ -196,7 +185,6 @@ Core::Core(const HWND windowHandle)
   cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
   res = mDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mCbvHeap));
   MYASSERT(res, L"CreateDescrCbvHeap");
-
   res = mDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
       D3D12_HEAP_FLAG_NONE,
@@ -208,7 +196,7 @@ Core::Core(const HWND windowHandle)
 
   //CBV（コンスタントバッファビュー）の作成
   for (UINT64 i = 0; i < NUM_POLYGONS; ++i) {
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
     cbvDesc.BufferLocation = mConstantBuffer->GetGPUVirtualAddress() + i * CBSize;
     cbvDesc.SizeInBytes = CBSize;
     UINT stride = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -216,6 +204,7 @@ Core::Core(const HWND windowHandle)
     cbHandle.ptr += i * stride;
     mDevice->CreateConstantBufferView(&cbvDesc, cbHandle);
   }
+
   //ここでマップして開いておく（Renderの度にマップしなくていい）
   readRange = CD3DX12_RANGE(0, 0);
   res = mConstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mCbvDataBegin));
@@ -227,18 +216,20 @@ void Core::UpdateCamera(const Camera& camera) {
   
   //ワールドトランスフォーム
   static float rot = 0;
-  UINT64 i = 0;
   const auto transView = XMMatrixLookToRH(XMLoadFloat3(&camera.mPos), XMLoadFloat3(&camera.mForward), XMLoadFloat3(&camera.mUpward));
   const auto transProj = XMMatrixPerspectiveFovRH(3.14159f / 4.0f, static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT), 0.1f, 1000.0f);
-  for (auto& cb : mCBufferForPolygons) {
-    const auto transWorld = XMMatrixRotationY(rot); //単純にyaw回転させる
+  const auto transWorld = XMMatrixRotationY(rot); //単純にyaw回転させる
+  rot += 0.0625f;
+
+  UINT64 i = 0;
+  for (auto& cb : mCBuffers) {
+    //コンスタントバッファの内容を更新
+    const auto transWorld = XMMatrixRotationY(rot) * XMMatrixTranslation(mPolygons[i][0].x, mPolygons[i][0].y, mPolygons[i][0].z);
     char* ptr = reinterpret_cast<char*>(mCbvDataBegin) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT * i;
     cb.mTransMatrix = XMMatrixTranspose(transWorld * transView * transProj);
-    //コンスタントバッファの内容を更新
     memcpy(ptr, &cb, sizeof(CBuffer));
     ++i;
   }
-  rot += 0.0625f;
 }
 
 
@@ -285,11 +276,8 @@ void Core::UpdateCommands() {
     auto cbvSrvUavDescHeap = mCbvHeap->GetGPUDescriptorHandleForHeapStart();
     cbvSrvUavDescHeap.ptr += i * size;
     mCommandList->SetGraphicsRootDescriptorTable(0, cbvSrvUavDescHeap);
-
+    mCommandList->DrawInstanced(3, 1, 0, 0);
   }
-
-  //描画（実際にここで描画されるわけではない。コマンドを記録するだけ）
-  mCommandList->DrawInstanced(3, 1, 0, 0);
 
   //バックバッファがこのあとPresentされることを伝える
   mCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mRenderTargets[mFrameIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));

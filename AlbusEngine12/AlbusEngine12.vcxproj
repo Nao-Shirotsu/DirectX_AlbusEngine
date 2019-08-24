@@ -171,6 +171,7 @@
     <ClInclude Include="src\d3d12_Core.hpp" />
     <ClInclude Include="src\Constants.hpp" />
     <ClInclude Include="src\d3d12_Vector3f.hpp" />
+    <ClInclude Include="src\d3d12_Polygon.hpp" />
     <ClInclude Include="src\winapi_Window.hpp" />
   </ItemGroup>
   <ItemGroup>
