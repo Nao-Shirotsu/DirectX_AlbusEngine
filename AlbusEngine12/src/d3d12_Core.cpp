@@ -1,10 +1,10 @@
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
 
-#include "d3d12_Core.hpp"
 #include "Constants.hpp"
-#include "d3d12_Vector3f.hpp"
 #include "d3d12_CBuffer.hpp"
+#include "d3d12_Core.hpp"
+#include "d3d12_Vector3f.hpp"
 
 //ライブラリ読み込み
 #pragma comment(lib, "d3d12.lib")
@@ -157,24 +157,17 @@ Core::Core(const HWND windowHandle)
   mConstantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&mCbvDataBegin));
 }
 
-void Core::UpdateCamera(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& forward, const DirectX::XMFLOAT3& upward) {
+void Core::UpdateCamera(const Camera& camera) {
   using namespace DirectX;
 
   //ワールドトランスフォーム
   static float r = 0;
-  mTransWorld = XMMatrixRotationY(r += 0.1f); //単純にyaw回転させる
-  // ビュートランスフォーム
-  constexpr XMFLOAT3 vEyePt(0.0f, 0.0f, -5.0f); //カメラ 位置
-  constexpr XMFLOAT3 vDir(0.0f, 0.0f, 1.0f);    //カメラ　方向
-  constexpr XMFLOAT3 vUpVec(0.0f, 1.0f, 0.0f);  //上方位置
-  mTransView = XMMatrixLookToRH(XMLoadFloat3(&vEyePt), XMLoadFloat3(&vDir), XMLoadFloat3(&vUpVec));
-  // プロジェクショントランスフォーム
-  mTransProj = XMMatrixPerspectiveFovRH(3.14159f / 4.0f, ( FLOAT )WINDOW_WIDTH / ( FLOAT )WINDOW_HEIGHT, 0.1f, 1000.0f);
+  const auto transWorld = XMMatrixRotationY(r += 0.1f); //単純にyaw回転させる
+  const auto transView = XMMatrixLookToRH(XMLoadFloat3(&camera.mPos), XMLoadFloat3(&camera.mForward), XMLoadFloat3(&camera.mUpward));
+  const auto transProj = XMMatrixPerspectiveFovRH(3.14159f / 4.0f, ( FLOAT )WINDOW_WIDTH / ( FLOAT )WINDOW_HEIGHT, 0.1f, 1000.0f);
 
   //コンスタントバッファの内容を更新
-  CBuffer cb;
-  cb.mTransMatrix = XMMatrixTranspose(mTransWorld * mTransView * mTransProj);
-  memcpy(mCbvDataBegin, &cb, sizeof(CBuffer));
+  memcpy(mCbvDataBegin, &CBuffer{ XMMatrixTranspose(transWorld * transView * transProj) }, sizeof(CBuffer));
 }
 
 void Core::UpdateCommands() {
@@ -228,13 +221,14 @@ void Core::StallForGPU() {
   mCommandQueue->Signal(mFence.Get(), mFenceValue);
 
   //上でセットしたシグナルがGPUから帰ってくるまでストール（この行で待機）
-  while (mFence->GetCompletedValue() < mFenceValue);
+  while (mFence->GetCompletedValue() < mFenceValue)
+    ;
 
   //App側では唯一ここでフェンス値を更新する
   mFenceValue++;
 }
 
-bool Core::TerminationRequested() const{
+bool Core::TerminationRequested() const {
   return mTermination;
 }
 

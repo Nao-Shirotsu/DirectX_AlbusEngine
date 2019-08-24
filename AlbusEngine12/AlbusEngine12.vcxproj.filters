@@ -41,6 +41,9 @@
     <ClInclude Include="src\d3d12_CBuffer.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\d3d12_Camera.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\Simple.hlsl">

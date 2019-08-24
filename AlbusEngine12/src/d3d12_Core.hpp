@@ -7,6 +7,7 @@
 #include <wrl.h>
 
 #include "d3d12_Vector3f.hpp"
+#include "d3d12_Camera.hpp"
 
 namespace shi62::d3d12 {
 
@@ -14,7 +15,7 @@ class Core {
 public:
   Core(const HWND windowHandle);
 
-  void UpdateCamera(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& forward, const DirectX::XMFLOAT3& upward);
+  void UpdateCamera(const Camera& camera);
   void UpdateCommands();
   void Render();
   void StallForGPU();
@@ -46,10 +47,6 @@ private:
   ComPtr<ID3D12Resource> mConstantBuffer;
   UINT8* mCbvDataBegin;
   ComPtr<ID3D12DescriptorHeap> mCbvHeap;
-
-  DirectX::XMMATRIX mTransWorld;
-  DirectX::XMMATRIX mTransView;
-  DirectX::XMMATRIX mTransProj;
 };
 
 } // namespace shi62::d3d12

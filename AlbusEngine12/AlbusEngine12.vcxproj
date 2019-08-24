@@ -166,6 +166,7 @@
     <ClCompile Include="src\WinMain.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\d3d12_Camera.hpp" />
     <ClInclude Include="src\d3d12_CBuffer.hpp" />
     <ClInclude Include="src\d3d12_Core.hpp" />
     <ClInclude Include="src\Constants.hpp" />
