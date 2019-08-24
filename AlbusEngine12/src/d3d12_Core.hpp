@@ -8,6 +8,7 @@
 
 #include "d3d12_Vector3f.hpp"
 #include "d3d12_Camera.hpp"
+#include "d3d12_CBuffer.hpp"
 
 namespace shi62::d3d12 {
 
@@ -47,6 +48,10 @@ private:
   ComPtr<ID3D12Resource> mConstantBuffer;
   UINT8* mCbvDataBegin;
   ComPtr<ID3D12DescriptorHeap> mCbvHeap;
+
+  std::vector<DirectX::XMFLOAT3> mPolygonVerticesVec;
+  std::vector<CBuffer> mCBufferForPolygons;
+  void InitPolygons();
 };
 
 } // namespace shi62::d3d12
