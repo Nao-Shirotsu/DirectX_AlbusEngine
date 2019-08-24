@@ -4,6 +4,9 @@
     <Filter Include="src">
       <UniqueIdentifier>{631c4506-3384-41e1-a517-3d4dd30d274d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="shader">
+      <UniqueIdentifier>{d1a8cc5e-f708-4206-a845-a7c82ede968c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
@@ -18,6 +21,7 @@
     <ClCompile Include="src\d3d12_Core.cpp">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="src\d3d12_CBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\winapi_Window.hpp">
@@ -29,5 +33,14 @@
     <ClInclude Include="src\Constants.hpp">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="src\d3d12_Vertex3d.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\d3d12_CBuffer.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shader\Simple.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>
