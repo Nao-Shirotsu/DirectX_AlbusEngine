@@ -21,7 +21,9 @@
     <ClCompile Include="src\d3d12_Core.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="src\d3d12_CBuffer.cpp" />
+    <ClCompile Include="src\d3d12_CBuffer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\winapi_Window.hpp">
@@ -33,8 +35,10 @@
     <ClInclude Include="src\Constants.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\d3d12_CBuffer.hpp" />
     <ClInclude Include="src\d3d12_Vector3f.hpp">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="src\d3d12_CBuffer.hpp">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>

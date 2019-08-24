@@ -16,7 +16,10 @@ INT WINAPI WinMain(_In_ HINSTANCE hInst,
 
   while (!(windowInstace.TerminationRequested() || d3d12Core.TerminationRequested())) {
     windowInstace.Update();
+    d3d12Core.UpdateCamera({}, {}, {});
+    d3d12Core.UpdateCommands();
     d3d12Core.Render();
+    d3d12Core.StallForGPU();
   }
   return 0;
 }

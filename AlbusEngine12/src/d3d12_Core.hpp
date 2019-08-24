@@ -6,19 +6,26 @@
 #include <dxgi1_4.h>
 #include <wrl.h>
 
+#include "d3d12_Vector3f.hpp"
+
 namespace shi62::d3d12 {
 
 class Core {
 public:
   Core(const HWND windowHandle);
 
+  void UpdateCamera(const DirectX::XMFLOAT3& pos, const DirectX::XMFLOAT3& forward, const DirectX::XMFLOAT3& upward);
+  void UpdateCommands();
   void Render();
+  void StallForGPU();
 
   [[nodiscard]] bool TerminationRequested() const;
 
 private:
   template <class T>
   using ComPtr = Microsoft::WRL::ComPtr<T>;
+
+  bool mTermination;
   ComPtr<IDXGISwapChain3> mSwapChain;
   ComPtr<ID3D12Device> mDevice;
   std::vector<ComPtr<ID3D12Resource>> mRenderTargets;
@@ -39,6 +46,10 @@ private:
   ComPtr<ID3D12Resource> mConstantBuffer;
   UINT8* mCbvDataBegin;
   ComPtr<ID3D12DescriptorHeap> mCbvHeap;
+
+  DirectX::XMMATRIX mTransWorld;
+  DirectX::XMMATRIX mTransView;
+  DirectX::XMMATRIX mTransProj;
 };
 
 } // namespace shi62::d3d12
