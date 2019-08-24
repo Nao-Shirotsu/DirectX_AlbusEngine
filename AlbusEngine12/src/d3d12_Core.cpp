@@ -3,7 +3,7 @@
 
 #include "d3d12_Core.hpp"
 #include "Constants.hpp"
-#include "d3d12_Vertex3d.hpp"
+#include "d3d12_Vector3f.hpp"
 #include "d3d12_CBuffer.hpp"
 
 //ライブラリ読み込み
@@ -100,11 +100,12 @@ Core::Core(const HWND windowHandle)
   mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
   //バーテックスバッファの作成
   //頂点
-  Vertex3d triangleVertices[] = {
+  Vector3f triangleVertices[] = {
     { { 0.0f, 0.5f, 0.0f } },
     { { 0.5f, -0.5f, 0.0f } },
     { { -0.5f, -0.5f, 0.0f } }
   };
+
   //バーテックスバッファ
   const UINT vertexBufferSize = sizeof(triangleVertices);
   mDevice->CreateCommittedResource(
@@ -122,7 +123,7 @@ Core::Core(const HWND windowHandle)
   mVertexBuffer->Unmap(0, NULL);
   //バーテックスバッファビューを初期化
   mVertexBufferView.BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
-  mVertexBufferView.StrideInBytes = sizeof(Vertex3d);
+  mVertexBufferView.StrideInBytes = sizeof(Vector3f);
   mVertexBufferView.SizeInBytes = vertexBufferSize;
   //フェンスを作成
   mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
@@ -163,14 +164,14 @@ void Core::Render() {
   XMMATRIX transProj;
   //ワールドトランスフォーム
   static float r = 0;
-  transWorld = XMMatrixRotationY(r += 0.1); //単純にyaw回転させる
+  transWorld = XMMatrixRotationY(r += 0.1f); //単純にyaw回転させる
   // ビュートランスフォーム
   XMFLOAT3 vEyePt(0.0f, 0.0f, -5.0f); //カメラ 位置
   XMFLOAT3 vDir(0.0f, 0.0f, 1.0f);    //カメラ　方向
   XMFLOAT3 vUpVec(0.0f, 1.0f, 0.0f);  //上方位置
   transView = XMMatrixLookToRH(XMLoadFloat3(&vEyePt), XMLoadFloat3(&vDir), XMLoadFloat3(&vUpVec));
   // プロジェクショントランスフォーム
-  transProj = XMMatrixPerspectiveFovRH(3.14159 / 4, ( FLOAT )WINDOW_WIDTH / ( FLOAT )WINDOW_HEIGHT, 0.1f, 1000.0f);
+  transProj = XMMatrixPerspectiveFovRH(3.14159f / 4.0f, ( FLOAT )WINDOW_WIDTH / ( FLOAT )WINDOW_HEIGHT, 0.1f, 1000.0f);
   //コマンドリストに書き込む前にはコマンドアロケーターをリセットする
   mCommandAllocator->Reset();
   //ここからコマンドリストにコマンドを書き込んでいく

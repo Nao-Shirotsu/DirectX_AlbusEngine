@@ -27,8 +27,8 @@ private:
   ComPtr<ID3D12DescriptorHeap> mRtvHeap;
   ComPtr<ID3D12PipelineState> mPipelineState;
   ComPtr<ID3D12GraphicsCommandList> mCommandList;
-  UINT mRtvDescriptorSize;
-  UINT mFrameIndex;
+  UINT8 mRtvDescriptorSize;
+  UINT8 mFrameIndex;
   ComPtr<ID3D12Fence> mFence;
   UINT64 mFenceValue;
   ComPtr<ID3D12RootSignature> mRootSignature;

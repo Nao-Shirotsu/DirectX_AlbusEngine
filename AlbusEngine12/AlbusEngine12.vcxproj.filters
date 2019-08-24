@@ -33,10 +33,10 @@
     <ClInclude Include="src\Constants.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\d3d12_Vertex3d.hpp">
+    <ClInclude Include="src\d3d12_CBuffer.hpp" />
+    <ClInclude Include="src\d3d12_Vector3f.hpp">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="src\d3d12_CBuffer.hpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\Simple.hlsl">
