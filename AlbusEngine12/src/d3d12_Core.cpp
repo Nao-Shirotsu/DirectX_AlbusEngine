@@ -161,14 +161,15 @@ void Core::UpdateCamera(const Camera& camera) {
   using namespace DirectX;
 
   //ワールドトランスフォーム
-  static float r = 0;
-  const auto transWorld = XMMatrixRotationY(r += 0.1f); //単純にyaw回転させる
+  static float rot = 0;
+  const auto transWorld = XMMatrixRotationY(rot += 0.1f); //単純にyaw回転させる
   const auto transView = XMMatrixLookToRH(XMLoadFloat3(&camera.mPos), XMLoadFloat3(&camera.mForward), XMLoadFloat3(&camera.mUpward));
   const auto transProj = XMMatrixPerspectiveFovRH(3.14159f / 4.0f, ( FLOAT )WINDOW_WIDTH / ( FLOAT )WINDOW_HEIGHT, 0.1f, 1000.0f);
 
   //コンスタントバッファの内容を更新
   memcpy(mCbvDataBegin, &CBuffer{ XMMatrixTranspose(transWorld * transView * transProj) }, sizeof(CBuffer));
 }
+
 
 void Core::UpdateCommands() {
   //コマンドリストに書き込む前にはコマンドアロケーターをリセットする
@@ -182,7 +183,7 @@ void Core::UpdateCommands() {
   mCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
   mCommandList->SetGraphicsRootDescriptorTable(0, mCbvHeap->GetGPUDescriptorHandleForHeapStart());
   //ビューポートをセット
-  mViewport = CD3DX12_VIEWPORT(0.0f, 0.0f, ( float )WINDOW_WIDTH, ( float )WINDOW_HEIGHT);
+  mViewport = CD3DX12_VIEWPORT(0.0f, 0.0f, static_cast<float>(WINDOW_WIDTH), static_cast<float>(WINDOW_HEIGHT));
   mScissorRect = CD3DX12_RECT(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
   mCommandList->RSSetViewports(1, &mViewport);
   mCommandList->RSSetScissorRects(1, &mScissorRect);
@@ -191,8 +192,7 @@ void Core::UpdateCommands() {
   CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvHeap->GetCPUDescriptorHandleForHeapStart(), mFrameIndex, mRtvDescriptorSize);
   mCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
   //画面クリア
-  const float clearColor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
-  mCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
+  mCommandList->ClearRenderTargetView(rtvHandle, SCREEN_CLEAR_COLOR, 0, nullptr);
   //ポリゴントポロジーの指定
   mCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
   //バーテックスバッファをセット
