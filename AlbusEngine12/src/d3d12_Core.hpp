@@ -6,19 +6,27 @@
 #include <dxgi1_4.h>
 #include <wrl.h>
 
+#include "d3d12_Vector3f.hpp"
+#include "d3d12_Camera.hpp"
+
 namespace shi62::d3d12 {
 
 class Core {
 public:
   Core(const HWND windowHandle);
 
+  void UpdateCamera(const Camera& camera);
+  void UpdateCommands();
   void Render();
+  void StallForGPU();
 
   [[nodiscard]] bool TerminationRequested() const;
 
 private:
   template <class T>
   using ComPtr = Microsoft::WRL::ComPtr<T>;
+
+  bool mTermination;
   ComPtr<IDXGISwapChain3> mSwapChain;
   ComPtr<ID3D12Device> mDevice;
   std::vector<ComPtr<ID3D12Resource>> mRenderTargets;
@@ -27,8 +35,8 @@ private:
   ComPtr<ID3D12DescriptorHeap> mRtvHeap;
   ComPtr<ID3D12PipelineState> mPipelineState;
   ComPtr<ID3D12GraphicsCommandList> mCommandList;
-  UINT mRtvDescriptorSize;
-  UINT mFrameIndex;
+  UINT8 mRtvDescriptorSize;
+  UINT8 mFrameIndex;
   ComPtr<ID3D12Fence> mFence;
   UINT64 mFenceValue;
   ComPtr<ID3D12RootSignature> mRootSignature;

@@ -2,6 +2,7 @@
 #include "d3d12_Core.hpp"
 #include "winapi_Window.hpp"
 #include "Constants.hpp"
+#include "d3d12_Camera.hpp"
 
 INT WINAPI WinMain(_In_ HINSTANCE hInst,
                    _In_opt_ HINSTANCE hPrevInst,
@@ -13,10 +14,16 @@ INT WINAPI WinMain(_In_ HINSTANCE hInst,
 
   auto windowInstace = shi62::winapi::Window{ hInst, L"d3d12 init", L"DirectX12 Test", WINDOW_WIDTH, WINDOW_HEIGHT };
   auto d3d12Core = shi62::d3d12::Core(windowInstace.GetWindowHandle());
+  constexpr auto camera = shi62::d3d12::Camera{
+    { 0.0f, 0.0f, -5.0f }, { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f }
+  };
 
   while (!(windowInstace.TerminationRequested() || d3d12Core.TerminationRequested())) {
     windowInstace.Update();
+    d3d12Core.UpdateCamera(camera);
+    d3d12Core.UpdateCommands();
     d3d12Core.Render();
+    d3d12Core.StallForGPU();
   }
   return 0;
 }
