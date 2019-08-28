@@ -49,9 +49,10 @@ private:
   UINT8* mCbvDataBegin;
   ComPtr<ID3D12DescriptorHeap> mCbvHeap;
 
-  std::vector<Polygon> mPolygons;
+  std::array<Vertex, 3> mVertices;
+  std::vector<Vector3f> mTrianglePos;
   std::vector<CBuffer> mCBuffers;
-  void InitPolygons();
+  void InitTrianglePos();
 };
 
 } // namespace shi62::d3d12

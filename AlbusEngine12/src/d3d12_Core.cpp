@@ -16,7 +16,7 @@ namespace {
 
 constexpr auto FRAME_COUNT = 3; //画面バッファ数
 constexpr float SCREEN_CLEAR_COLOR[] = { 0.75f, 0.75f, 0.75f, 1.0f };
-constexpr int NUM_POLYGONS = 4;
+constexpr int NUM_POLYGONS = 1;
 
 } // anonymous namespace
 
@@ -26,13 +26,9 @@ void MYASSERT(HRESULT res, LPCWSTR errmsg) {
   _ASSERT_EXPR(SUCCEEDED(res), errmsg);
 }
 
-void Core::InitPolygons() {
-  int i = 0;
-  for (auto& polygon : mPolygons) {
-    polygon[0] = { 0.0f + 1.0f * i, 0.5f, 0.0f };
-    polygon[1] = { 0.5f + 1.0f * i, -0.5f, 0.0f };
-    polygon[2] = { -0.5f + 1.0f * i, -0.5f, 0.0f };
-    ++i;
+void Core::InitTrianglePos() {
+  for (int i = 0; i < NUM_POLYGONS; ++i) {
+    mTrianglePos[i] = { 1.5f * i, 2.0f, 0.0f };
   }
 }
 
@@ -40,8 +36,11 @@ Core::Core(const HWND windowHandle)
     : mTermination{ false }
     , mRenderTargets{ FRAME_COUNT }
     , mCbvDataBegin{ nullptr }
-    , mPolygons{ NUM_POLYGONS }
-    , mCBuffers{ NUM_POLYGONS } {
+    , mCBuffers{ NUM_POLYGONS }
+    , mTrianglePos{ NUM_POLYGONS }
+    , mVertices{ Vertex{ { 0.0f, 0.5f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
+                 Vertex{ { 0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, -1.0f } },
+                 Vertex{ { -0.5f, -0.5f, 0.0f }, { 0.0f, 0.0f, -1.0f } } } {
   HRESULT res;
 
   //D3D12デバイスの作成
@@ -111,47 +110,50 @@ Core::Core(const HWND windowHandle)
   MYASSERT(res, L"RootSign");
   res = mDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mRootSignature));
   MYASSERT(res, L"CreateRootSign");
+  {
+    //シェーダーの作成
+    Microsoft::WRL::ComPtr<ID3DBlob> vertexShader;
+    Microsoft::WRL::ComPtr<ID3DBlob> pixelShader;
+    res = D3DCompileFromFile(L"shader/Simple.hlsl", nullptr, nullptr, "VS", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &vertexShader, nullptr);
+    MYASSERT(res, L"CreateShader");
+    res = D3DCompileFromFile(L"shader/Simple.hlsl", nullptr, nullptr, "PS", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &pixelShader, nullptr);
+    MYASSERT(res, L"CreateShader");
 
-  //シェーダーの作成
-  ID3DBlob* vertexShader;
-  ID3DBlob* pixelShader;
-  res = D3DCompileFromFile(L"shader/Simple.hlsl", nullptr, nullptr, "VS", "vs_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &vertexShader, nullptr);
-  MYASSERT(res, L"CreateShader");
-  res = D3DCompileFromFile(L"shader/Simple.hlsl", nullptr, nullptr, "PS", "ps_5_0", D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION, 0, &pixelShader, nullptr);
-  MYASSERT(res, L"CreateShader");
+    //頂点レイアウトの作成
+    D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
+      { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+      { "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, sizeof(Vertex::mPos), D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+    };
 
-  //頂点レイアウトの作成
-  D3D12_INPUT_ELEMENT_DESC inputElementDescs[] = {
-    { "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-  };
-
-  //パイプラインステートオブジェクトの作成
-  D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-  psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-  psoDesc.pRootSignature = mRootSignature.Get();
-  psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader);
-  psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader);
-  psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-  psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-  psoDesc.DepthStencilState.DepthEnable = FALSE;
-  psoDesc.DepthStencilState.StencilEnable = FALSE;
-  psoDesc.SampleMask = UINT_MAX;
-  psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-  psoDesc.NumRenderTargets = 1;
-  psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-  psoDesc.SampleDesc.Count = 1;
-  res = mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
-  MYASSERT(res, L"CreatePipeState");
+    //パイプラインステートオブジェクトの作成
+    D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+    psoDesc.pRootSignature = mRootSignature.Get();
+    psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
+    psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
+    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.DepthStencilState.DepthEnable = FALSE;
+    psoDesc.DepthStencilState.StencilEnable = FALSE;
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.SampleDesc.Count = 1;
+    res = mDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mPipelineState));
+    MYASSERT(res, L"CreatePipeState");
+  }
 
   //バーテックスバッファの作成
   //頂点
-  InitPolygons();
+  InitTrianglePos();
   
   //バーテックスバッファ
+  const UINT vertexBufferSize = sizeof(Vertex) * mVertices.size();
   res = mDevice->CreateCommittedResource(
       &CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
       D3D12_HEAP_FLAG_NONE,
-      &CD3DX12_RESOURCE_DESC::Buffer(sizeof(Polygon)),
+      &CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize),
       D3D12_RESOURCE_STATE_GENERIC_READ,
       nullptr,
       IID_PPV_ARGS(&mVertexBuffer));
@@ -162,13 +164,13 @@ Core::Core(const HWND windowHandle)
   CD3DX12_RANGE readRange(0, 0);
   res = mVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin));
   MYASSERT(res, L"Map VBuff");
-  memcpy(pVertexDataBegin, &mPolygons[0], sizeof(Polygon));
+  memcpy(pVertexDataBegin, &mVertices[0], vertexBufferSize);
   mVertexBuffer->Unmap(0, nullptr);
 
   //バーテックスバッファビューを初期化
   mVertexBufferView.BufferLocation = mVertexBuffer->GetGPUVirtualAddress();
-  mVertexBufferView.StrideInBytes = sizeof(Vector3f);
-  mVertexBufferView.SizeInBytes = sizeof(Polygon);
+  mVertexBufferView.StrideInBytes = sizeof(Vertex);
+  mVertexBufferView.SizeInBytes = vertexBufferSize;
 
   //フェンスを作成
   res = mDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&mFence));
@@ -196,7 +198,7 @@ Core::Core(const HWND windowHandle)
 
   //CBV（コンスタントバッファビュー）の作成
   for (UINT64 i = 0; i < NUM_POLYGONS; ++i) {
-    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc;
+    D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
     cbvDesc.BufferLocation = mConstantBuffer->GetGPUVirtualAddress() + i * CBSize;
     cbvDesc.SizeInBytes = CBSize;
     UINT stride = mDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
@@ -218,18 +220,20 @@ void Core::UpdateCamera(const Camera& camera) {
   static float rot = 0;
   const auto transView = XMMatrixLookToRH(XMLoadFloat3(&camera.mPos), XMLoadFloat3(&camera.mForward), XMLoadFloat3(&camera.mUpward));
   const auto transProj = XMMatrixPerspectiveFovRH(3.14159f / 4.0f, static_cast<float>(WINDOW_WIDTH) / static_cast<float>(WINDOW_HEIGHT), 0.1f, 1000.0f);
-  const auto transWorld = XMMatrixRotationY(rot); //単純にyaw回転させる
+  const auto Rot = XMMatrixRotationY(rot);
   rot += 0.0625f;
 
-  UINT64 i = 0;
-  for (auto& cb : mCBuffers) {
+  for (UINT64 i = 0; i < NUM_POLYGONS; ++i) {
     //コンスタントバッファの内容を更新
-    const auto transWorld = XMMatrixRotationY(rot) * XMMatrixTranslation(mPolygons[i][0].x, mPolygons[i][0].y, mPolygons[i][0].z);
-    char* ptr = reinterpret_cast<char*>(mCbvDataBegin) + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT * i;
-    cb.mTransMatrix = XMMatrixTranspose(transWorld * transView * transProj);
-    memcpy(ptr, &cb, sizeof(CBuffer));
-    ++i;
+    mCBuffers[i].mTransW = Rot * XMMatrixTranslation(mTrianglePos[i].x, mTrianglePos[i].y, mTrianglePos[i].z);
+    mCBuffers[i].mTransWVP = XMMatrixTranspose(mCBuffers[i].mTransW * transView * transProj);
+    mCBuffers[i].mLightDir = { 0, 0, 1, 0 };
+    mCBuffers[i].mDiffuseColor = { 0, 1, 0, 1 };
+
+    UINT8* dstPtr = mCbvDataBegin + D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT * i;
+    std::memcpy(dstPtr, &mCBuffers[i], sizeof(CBuffer));
   }
+  //std::memcpy(mCbvDataBegin, &mCBuffers[0], sizeof(CBuffer) * NUM_POLYGONS);
 }
 
 
